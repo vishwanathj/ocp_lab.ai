@@ -77,6 +77,9 @@ When something surprising happens — a bug that slipped through, a check that m
 to be redone — add an entry to [docs/lessons-learned.md](docs/lessons-learned.md) **in the same pull request**,
 newest first. Decisions between options belong in an ADR instead.
 
+Add an entry only if it would **change how someone works on this repository**. Personal or one-machine
+issues (an old editor, a local setup quirk) belong in your own notes. Most pull requests won't need one.
+
 ```markdown
 ### <a id="lN"></a>LN · YYYY-MM-DD: <what happened, in a few words>
 **Tags:** <Verification | Process | Guardrails | Review | Security | Environment | Code> [· AI] — **Status:** Recorded
