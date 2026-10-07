@@ -1,0 +1,63 @@
+name: Task
+description: A planned piece of work — feature, docs, tests, tooling or a milestone item.
+title: "<short, imperative summary>"
+projects: ["vishwanathj/2"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Describe **what** and **why**, and how we'll know it's done.
+        The product owner assigns the milestone, labels and priority when triaging.
+
+  - type: textarea
+    id: user-story
+    attributes:
+      label: User story
+      description: Who needs this, what they need, and why.
+      placeholder: As a <role>, I want <capability>, so that <benefit>.
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance criteria
+      description: Concrete, checkable conditions. The work is done when all are ticked.
+      placeholder: |
+        - [ ] ...
+        - [ ] ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: test-plan
+    attributes:
+      label: Test plan
+      description: How each criterion is verified — unit, integration or smoke test, or a manual check. Written before the work starts.
+      placeholder: |
+        - Unit test: ...
+        - Manual check: ...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: role
+    attributes:
+      label: Main role
+      description: Which role mostly does this work.
+      options:
+        - Product owner
+        - Developer
+        - Tester
+        - Docs
+        - Security
+        - Release
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: decision
+    attributes:
+      label: Decisions
+      options:
+        - label: This needs a product owner or architect decision before work can start.
