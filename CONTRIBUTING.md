@@ -69,6 +69,8 @@ AI tools are optional. If a pull request was built with an AI assistant, its squ
 have no such block. The same rules apply to every change, however it was written.
 
 If you use Claude Code, [CLAUDE.md](CLAUDE.md) imports this page and adds a few Claude-specific notes.
+Lessons about working with AI tools are collected in [docs/ai-lessons-learned.md](docs/ai-lessons-learned.md);
+add one in your PR when something worth sharing happens.
 
 ## Secrets
 
