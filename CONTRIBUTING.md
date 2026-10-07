@@ -23,6 +23,8 @@ Nothing is pushed straight to `main`; the repository's ruleset blocks it.
   you wrote the change or have the right to submit it under the project's license — the
   [Developer Certificate of Origin](https://developercertificate.org/) used by Ansible's own projects.
 - **Link the issue:** put `Closes #<number>` in the PR description.
+- **Pull request numbers:** issues and pull requests share one number sequence, so don't predict a PR's
+  number. Until it exists, refer to it as "the PR for issue #N".
 
 ## Roles
 
@@ -67,6 +69,34 @@ This list grows as the project gains tests, CI and release tooling.
 AI tools are optional. If a pull request was built with an AI assistant, its squash commit records an
 **AI usage** block: token counts and an estimated cost at API list prices. PRs built without AI simply
 have no such block. The same rules apply to every change, however it was written.
+
+If you use Claude Code, [CLAUDE.md](CLAUDE.md) imports this page and adds a few Claude-specific notes.
+Lessons about working with AI tools go in the project's [lessons log](#lessons-learned), tagged `AI`.
+
+## Lessons learned
+
+When something surprising happens — a bug that slipped through, a check that misled you, a step that had
+to be redone — add an entry to [docs/lessons-learned.md](docs/lessons-learned.md) **in the same pull request**,
+newest first. Decisions between options belong in an ADR instead.
+
+Add an entry only if it would **change how someone works on this repository**. Personal or one-machine
+issues (an old editor, a local setup quirk) belong in your own notes. Most pull requests won't need one.
+
+```markdown
+### <a id="lN"></a>LN · YYYY-MM-DD: <what happened, in a few words>
+**Tags:** <Verification | Process | Guardrails | Review | Security | Environment | Code> [· AI] — **Status:** Recorded
+- **Issue:** what went wrong, with links to the issue or PR
+- **Why it stayed hidden:** why nothing caught it earlier
+- **Resolution:** what fixed this occurrence
+- **Prevention:** what stops it from happening again — a guard (link it), an issue that will add one (link it),
+  or "accepted risk" with a one-line reason
+- **Lesson:** the rule to follow next time, in one or two sentences
+```
+
+- **IDs are permanent:** a new entry takes the highest existing number + 1. Never renumber; removed entries leave a gap.
+- **Every entry needs a prevention action.** When the guard exists, set the status to `Guarded` and link it.
+  **A lesson that happens twice must become `Guarded`.** Each milestone's retrospective reviews the `Recorded`
+  entries and checks their prevention issues are scheduled.
 
 ## Secrets
 
