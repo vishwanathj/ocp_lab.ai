@@ -68,6 +68,8 @@ AI tools are optional. If a pull request was built with an AI assistant, its squ
 **AI usage** block: token counts and an estimated cost at API list prices. PRs built without AI simply
 have no such block. The same rules apply to every change, however it was written.
 
+If you use Claude Code, [CLAUDE.md](CLAUDE.md) imports this page and adds a few Claude-specific notes.
+
 ## Secrets
 
 This project talks to an API that needs Red Hat credentials. **Never** put tokens, pull secrets,
