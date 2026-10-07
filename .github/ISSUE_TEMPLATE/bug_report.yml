@@ -1,0 +1,73 @@
+name: Bug report
+description: Something in the collection does not work as documented.
+title: "<module>: <what goes wrong>"
+labels: ["type/bug"]
+projects: ["vishwanathj/2"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting! **Never paste tokens, passwords, pull secrets or internal hostnames** — this issue is public.
+        Security problems go to a [private vulnerability report](https://github.com/vishwanathj/ocp_lab.ai/security/advisories/new) instead.
+
+  - type: input
+    id: module
+    attributes:
+      label: Module
+      placeholder: ocp_lab.ai.openshift_version_info
+    validations:
+      required: true
+
+  - type: input
+    id: collection-version
+    attributes:
+      label: Collection version
+      description: Output of `ansible-galaxy collection list ocp_lab.ai`, or a commit SHA.
+    validations:
+      required: true
+
+  - type: input
+    id: ansible-core-version
+    attributes:
+      label: ansible-core version
+      description: First line of `ansible --version`.
+    validations:
+      required: true
+
+  - type: textarea
+    id: task
+    attributes:
+      label: Task that fails
+      description: The smallest task or playbook that shows the problem.
+      render: yaml
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected result
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual result
+    validations:
+      required: true
+
+  - type: textarea
+    id: verbose-output
+    attributes:
+      label: Output with -vvv
+      description: Run the task with `-vvv` and paste the module output. Remove secrets first.
+      render: text
+
+  - type: checkboxes
+    id: secrets-removed
+    attributes:
+      label: Safety check
+      options:
+        - label: I removed tokens, passwords, pull secrets and internal hostnames from everything above.
+          required: true
