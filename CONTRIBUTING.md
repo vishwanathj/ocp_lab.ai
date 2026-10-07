@@ -69,8 +69,26 @@ AI tools are optional. If a pull request was built with an AI assistant, its squ
 have no such block. The same rules apply to every change, however it was written.
 
 If you use Claude Code, [CLAUDE.md](CLAUDE.md) imports this page and adds a few Claude-specific notes.
-Lessons about working with AI tools are collected in [docs/ai-lessons-learned.md](docs/ai-lessons-learned.md);
-add one in your PR when something worth sharing happens.
+Lessons about working with AI tools go in the project's [lessons log](#lessons-learned), tagged `AI`.
+
+## Lessons learned
+
+When something surprising happens — a bug that slipped through, a check that misled you, a step that had
+to be redone — add an entry to [docs/lessons-learned.md](docs/lessons-learned.md) **in the same pull request**,
+newest first. Decisions between options belong in an ADR instead.
+
+```markdown
+### <a id="lN"></a>LN · YYYY-MM-DD: <what happened, in a few words>
+**Tags:** <Verification | Process | Guardrails | Review | Security | Environment | Code> [· AI] — **Status:** Recorded
+- **Issue:** what went wrong, with links to the issue or PR
+- **Why it stayed hidden:** why nothing caught it earlier
+- **Resolution:** what was done about it
+- **Lesson:** the rule to follow next time, in one or two sentences
+```
+
+`N` is the next number. When something now enforces the lesson — a test, a CI check, a ruleset, a template
+or a documented rule — change the status to `Guarded` and link it. **A lesson that happens twice must
+become `Guarded`.** Each milestone's retrospective reviews the `Recorded` entries.
 
 ## Secrets
 

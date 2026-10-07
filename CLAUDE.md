@@ -10,7 +10,7 @@ The contribution rules above apply to everyone. These notes only add what is spe
 - **Evidence:** show command or test output before calling something done. If a check could not run,
   say so plainly instead of claiming success.
 - **Secrets:** never ask for, print or store real tokens or pull secrets. Use fake values in tests.
-- **Lessons:** when a notable lesson about working with AI comes up, add a row to
-  [docs/ai-lessons-learned.md](docs/ai-lessons-learned.md) in the same pull request.
+- **Lessons:** when something surprising happens, add an entry to
+  [docs/lessons-learned.md](docs/lessons-learned.md) in the same pull request (tag `AI` when relevant).
 
 Skills and hooks are added later, once the procedures they describe have been done by hand.
