@@ -23,6 +23,8 @@ Nothing is pushed straight to `main`; the repository's ruleset blocks it.
   you wrote the change or have the right to submit it under the project's license — the
   [Developer Certificate of Origin](https://developercertificate.org/) used by Ansible's own projects.
 - **Link the issue:** put `Closes #<number>` in the PR description.
+- **Pull request numbers:** issues and pull requests share one number sequence, so don't predict a PR's
+  number. Until it exists, refer to it as "the PR for issue #N".
 
 ## Roles
 
@@ -85,13 +87,16 @@ issues (an old editor, a local setup quirk) belong in your own notes. Most pull 
 **Tags:** <Verification | Process | Guardrails | Review | Security | Environment | Code> [· AI] — **Status:** Recorded
 - **Issue:** what went wrong, with links to the issue or PR
 - **Why it stayed hidden:** why nothing caught it earlier
-- **Resolution:** what was done about it
+- **Resolution:** what fixed this occurrence
+- **Prevention:** what stops it from happening again — a guard (link it), an issue that will add one (link it),
+  or "accepted risk" with a one-line reason
 - **Lesson:** the rule to follow next time, in one or two sentences
 ```
 
-`N` is the next number. When something now enforces the lesson — a test, a CI check, a ruleset, a template
-or a documented rule — change the status to `Guarded` and link it. **A lesson that happens twice must
-become `Guarded`.** Each milestone's retrospective reviews the `Recorded` entries.
+- **IDs are permanent:** a new entry takes the highest existing number + 1. Never renumber; removed entries leave a gap.
+- **Every entry needs a prevention action.** When the guard exists, set the status to `Guarded` and link it.
+  **A lesson that happens twice must become `Guarded`.** Each milestone's retrospective reviews the `Recorded`
+  entries and checks their prevention issues are scheduled.
 
 ## Secrets
 
