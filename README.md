@@ -18,6 +18,8 @@ Every change starts as a GitHub issue, is made on a feature branch, and is merge
 through a pull request. Each milestone (M00, M01, …) is tagged, so you can check out
 any stage and see how the project grew — the history doubles as a tutorial.
 
+Want to help? Read [CONTRIBUTING.md](CONTRIBUTING.md).
+
 ## Disclaimer
 
 This is an independent project. It is not affiliated with, endorsed by, or supported
