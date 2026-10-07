@@ -27,5 +27,5 @@ Newest first. Use the template in [CONTRIBUTING.md](../CONTRIBUTING.md#lessons-l
 - **Issue:** The plan called the first pull request "PR #1", but GitHub numbered it [#2](https://github.com/vishwanathj/ocp_lab.ai/pull/2) because issue #1 already had that number.
 - **Why it stayed hidden:** issue and pull request numbers look like separate counters, and nothing checked the number before it was used.
 - **Resolution:** Referred to the pull request by its real number, #2.
-- **Prevention:** `make merge` ([#9](https://github.com/vishwanathj/ocp_lab.ai/issues/9)) looks up the pull request from the branch instead of taking an assumed number; CONTRIBUTING says to refer to "the PR for issue #N" until the PR exists.
+- **Prevention:** now — CONTRIBUTING says to refer to "the PR for issue #N" until the PR exists. Planned — `make merge` ([#9](https://github.com/vishwanathj/ocp_lab.ai/issues/9)) will look up the pull request from the branch instead of taking an assumed number.
 - **Lesson:** Never assume a pull request's number. Look it up, or refer to it by its issue.
