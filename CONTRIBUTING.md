@@ -15,6 +15,22 @@ Every change follows the same path:
 
 Nothing is pushed straight to `main`; the repository's ruleset blocks it.
 
+## Setting up
+
+You need three things on your machine: **podman** (or docker), **make** and **git**.
+Nothing else is installed on your machine; every tool runs inside the project's dev container.
+
+| Command | What it does |
+|---|---|
+| `make test` | Runs the unit tests in the dev container, building the container first if needed |
+| `make clean` | Removes the dev container images; the next `make test` rebuilds them |
+| `make help` | Lists every target |
+
+- The first `make test` downloads the base image and builds the container, which takes a minute.
+  Later runs reuse it. Editing `Containerfile` or `requirements-dev.txt` rebuilds it automatically.
+- `make` uses podman if it is installed, otherwise docker. To choose one: `make test ENGINE=docker`.
+- Your checkout is mounted **read-only** inside the container, so tests can't change your files.
+
 ## Branches and commits
 
 - **Branch name:** `<issue-number>-<short-slug>`, for example `3-contributing-guide`.
