@@ -13,6 +13,7 @@ The short version. Each links to the entries it came from.
 
 **Verification**
 - Confirm a test's setup worked before trusting its result; script the setup — [L3](#l3).
+- Read what a check did, not just its color; "skipped" can show as green — [L4](#l4).
 
 **Process**
 - Never assume a pull request's number; look it up, or refer to it by its issue — [L1](#l1).
@@ -25,6 +26,14 @@ the entry. A lesson that happens twice must become `Guarded`.
 ## Entries
 
 Newest first. Use the template in [CONTRIBUTING.md](../CONTRIBUTING.md#lessons-learned).
+
+### <a id="l4"></a>L4 · 2026-10-19: A green check meant "skipped", not "passed"
+**Tags:** Verification · Review · AI — **Status:** Guarded ([CONTRIBUTING](../CONTRIBUTING.md#merging) rule; automated check planned in [#9](https://github.com/vishwanathj/ocp_lab.ai/issues/9))
+- **Issue:** Before merging [#24](https://github.com/vishwanathj/ocp_lab.ai/pull/24), the CodeRabbit check on the last commit was green, which looked like a clean review. Its description said "Review skipped: manual review required for this OSS repository": CodeRabbit had confirmed one fix in a comment thread, but hadn't reviewed the commit as a whole.
+- **Why it stayed hidden:** GitHub shows the check's color first; the description is only visible when you open it. A skipped review and a clean review look the same in the list of checks.
+- **Resolution:** Noticed while reading the check's details before merging. The maintainer accepted the in-thread confirmation, and the squash commit says the review was skipped.
+- **Prevention:** now — CONTRIBUTING says to read a check's description, not just its color, and to ask for a skipped review with `@coderabbitai review`. Planned — `make merge` ([#9](https://github.com/vishwanathj/ocp_lab.ai/issues/9)) will refuse to merge while the CodeRabbit status description says "skipped", unless told otherwise.
+- **Lesson:** A green check only means the check didn't fail. Before trusting it, read what it actually did.
 
 ### <a id="l3"></a>L3 · 2026-10-14: A check passed although its setup step had failed
 **Tags:** Verification · AI — **Status:** Guarded ([`make clean`](../Makefile))
