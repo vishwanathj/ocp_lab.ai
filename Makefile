@@ -25,7 +25,10 @@ image: ## Build the dev container if it is missing or out of date
 test: image ## Run the unit tests in the dev container
 	$(RUN) python -m pytest -p no:cacheprovider tests/unit
 
+# Fails if an image could not be removed, so a failed clean is never mistaken for a clean one.
 clean: ## Remove every dev container image; the next target rebuilds it
 	@ids=$$($(ENGINE) images -q $(IMAGE_NAME)); \
-	if [ -n "$$ids" ]; then $(ENGINE) rmi -f $$ids >/dev/null; fi; \
-	echo "dev images left: $$($(ENGINE) images -q $(IMAGE_NAME) | wc -l | tr -d ' ')"
+	if [ -n "$$ids" ]; then $(ENGINE) rmi -f $$ids >/dev/null || exit 1; fi; \
+	left=$$($(ENGINE) images -q $(IMAGE_NAME) | wc -l | tr -d ' '); \
+	echo "dev images left: $$left"; \
+	[ "$$left" -eq 0 ]

@@ -31,7 +31,7 @@ Newest first. Use the template in [CONTRIBUTING.md](../CONTRIBUTING.md#lessons-l
 - **Issue:** While testing [#6](https://github.com/vishwanathj/ocp_lab.ai/issues/6), the step "remove the image, then rerun `make test`" was run with a mistyped removal command (`podman rmi -q`, a flag that doesn't exist). The removal failed, the old image stayed, and `make test` passed, so it looked as if the rebuild had been tested.
 - **Why it stayed hidden:** the removal error scrolled past, and the result that mattered (`1 passed`) looked right. Nothing checked that the image was gone before the rerun.
 - **Resolution:** Noticed the error and the remaining image count, removed the images properly, and confirmed the rebuild.
-- **Prevention:** `make clean` removes the images and prints how many are left, so the setup step is one tested command that reports its own result instead of a hand-typed one.
+- **Prevention:** `make clean` removes the images, prints how many are left and fails unless none are, so the setup step is one tested command that reports its own result instead of a hand-typed one.
 - **Lesson:** When a test step has a setup ("remove X, then check Y"), confirm the setup worked before trusting the check, and prefer a `make` target over a hand-typed command.
 
 ### <a id="l2"></a>L2 · 2026-10-07: Documentation described a planned feature as if it existed
