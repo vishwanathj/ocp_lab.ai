@@ -1,0 +1,33 @@
+# Runs the same `make test` that contributors run locally, in the same dev container.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# Least privilege: the job only reads the repository.
+permissions:
+  contents: read
+
+# A newer push to the same branch cancels the older run.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: make test
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      # Actions are pinned to a commit SHA, because a tag can be moved to different code.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Show the container engine
+        run: podman --version
+
+      - name: Run the tests in the dev container
+        run: make test
