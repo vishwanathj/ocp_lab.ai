@@ -11,6 +11,9 @@ A surprise — something that went wrong or turned out differently than expected
 
 The short version. Each links to the entries it came from.
 
+**Verification**
+- Confirm a test's setup worked before trusting its result; script the setup — [L3](#l3).
+
 **Process**
 - Never assume a pull request's number; look it up, or refer to it by its issue — [L1](#l1).
 - Describe what exists; mark anything else as planned, with a link to its issue — [L2](#l2).
@@ -22,6 +25,14 @@ the entry. A lesson that happens twice must become `Guarded`.
 ## Entries
 
 Newest first. Use the template in [CONTRIBUTING.md](../CONTRIBUTING.md#lessons-learned).
+
+### <a id="l3"></a>L3 · 2026-10-14: A check passed although its setup step had failed
+**Tags:** Verification · AI — **Status:** Guarded ([`make clean`](../Makefile))
+- **Issue:** While testing [#6](https://github.com/vishwanathj/ocp_lab.ai/issues/6), the step "remove the image, then rerun `make test`" was run with a mistyped removal command (`podman rmi -q`, a flag that doesn't exist). The removal failed, the old image stayed, and `make test` passed, so it looked as if the rebuild had been tested.
+- **Why it stayed hidden:** the removal error scrolled past, and the result that mattered (`1 passed`) looked right. Nothing checked that the image was gone before the rerun.
+- **Resolution:** Noticed the error and the remaining image count, removed the images properly, and confirmed the rebuild.
+- **Prevention:** `make clean` removes the images, prints how many are left and fails unless none are, so the setup step is one tested command that reports its own result instead of a hand-typed one.
+- **Lesson:** When a test step has a setup ("remove X, then check Y"), confirm the setup worked before trusting the check, and prefer a `make` target over a hand-typed command.
 
 ### <a id="l2"></a>L2 · 2026-10-07: Documentation described a planned feature as if it existed
 **Tags:** Process · AI — **Status:** Recorded (accepted risk for now)
