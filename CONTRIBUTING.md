@@ -9,6 +9,8 @@ Every change follows the same path:
 
 1. **Issue** — open one with the **Task** or **Bug report** form. Planned work is grouped into
    milestones (`M01`, `M02`, …) and tracked on the [project board](https://github.com/users/vishwanathj/projects/2).
+   The forms add the issue to the board. From the command line, add it yourself with
+   `gh issue create --project "ocp_lab.ai roadmap" …`, then check that it shows up on the board.
 2. **Feature branch** — create a branch from `main` named after the issue.
 3. **Pull request** — open a PR against `main`. The PR template asks for a summary, test evidence and a checklist.
 4. **Merge** — once reviewed, the PR is squashed (or rebased) into `main`, and the issue closes.

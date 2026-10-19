@@ -18,6 +18,7 @@ The short version. Each links to the entries it came from.
 **Process**
 - Never assume a pull request's number; look it up, or refer to it by its issue — [L1](#l1).
 - Describe what exists; mark anything else as planned, with a link to its issue — [L2](#l2).
+- After creating an issue, confirm it is on the board; from the command line, pass `--project` — [L5](#l5).
 
 **Status of an entry:** `Recorded` means written down; its prevention is planned or accepted as a risk.
 `Guarded` means something now enforces it (a check, test, ruleset, template or documented rule), linked in
@@ -26,6 +27,14 @@ the entry. A lesson that happens twice must become `Guarded`.
 ## Entries
 
 Newest first. Use the template in [CONTRIBUTING.md](../CONTRIBUTING.md#lessons-learned).
+
+### <a id="l5"></a>L5 · 2026-10-19: An issue created from the command line never reached the board
+**Tags:** Process · AI — **Status:** Guarded ([CONTRIBUTING](../CONTRIBUTING.md#how-work-flows) rule)
+- **Issue:** [#26](https://github.com/vishwanathj/ocp_lab.ai/issues/26) was created with `gh issue create` without `--project`. The board's "Auto-add to project" workflow is on, but the issue wasn't added; it was found only because setting its board fields failed.
+- **Why it stayed hidden:** issue forms add issues to the board through their `projects:` setting, so issues normally appear without anyone thinking about it. The command line skips the forms, and the auto-add workflow's filter can't be read through the API, so why it didn't catch the issue is not yet known.
+- **Resolution:** Added #26 to the board by hand and set its fields.
+- **Prevention:** CONTRIBUTING now says to pass `--project` when creating an issue from the command line and to check that it shows up on the board. Still to do: check the auto-add filter in the board's settings.
+- **Lesson:** Don't rely on automation you can't see. After creating an issue, confirm it is on the board.
 
 ### <a id="l4"></a>L4 · 2026-10-19: A green check meant "skipped", not "passed"
 **Tags:** Verification · Review · AI — **Status:** Guarded ([CONTRIBUTING](../CONTRIBUTING.md#merging) rule; automated check planned in [#9](https://github.com/vishwanathj/ocp_lab.ai/issues/9))
