@@ -9,6 +9,8 @@ Every change follows the same path:
 
 1. **Issue** — open one with the **Task** or **Bug report** form. Planned work is grouped into
    milestones (`M01`, `M02`, …) and tracked on the [project board](https://github.com/users/vishwanathj/projects/2).
+   Every new open issue is added to the board automatically, however it was created; check that it
+   shows up there.
 2. **Feature branch** — create a branch from `main` named after the issue.
 3. **Pull request** — open a PR against `main`. The PR template asks for a summary, test evidence and a checklist.
 4. **Merge** — once reviewed, the PR is squashed (or rebased) into `main`, and the issue closes.
@@ -61,12 +63,18 @@ Each role is described in more detail when it is first needed in the project.
 
 ## Merging
 
-- `main` requires a pull request with **1 approval**, resolved review comments and linear history
-  (squash or rebase merges only; merge commits are disabled).
+- `main` requires a pull request with **1 approval**, resolved review comments, linear history
+  (squash or rebase merges only; merge commits are disabled) and a green **`make test`** check.
+- **CI:** [`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs `make test` in the same dev container
+  on every pull request and every push to `main`. If it passes on your machine, it should pass in CI.
 - **Solo-maintainer rule:** GitHub doesn't allow approving your own pull request. While the project has
   one maintainer, that maintainer may merge their own PRs with an admin override — only after
-  self-reviewing against the PR template's checklist, and only when all checks pass. When a second
-  maintainer joins, every PR gets a real approval.
+  self-reviewing against the PR template's checklist, and **only when CI is green**. The override
+  replaces the missing approval, never a failing check. When a second maintainer joins, every PR gets
+  a real approval.
+- **Read a check, not just its color.** A green check can mean "skipped": CodeRabbit marks a review it
+  didn't run as a success, with the description "Review skipped…". A skipped review isn't a review; ask
+  for one by commenting `@coderabbitai review`.
 - Squash commit messages keep the PR's summary, the `Closes #` line and the sign-off.
 
 ## Definition of done
@@ -75,6 +83,7 @@ A change is done when:
 
 - the issue's acceptance criteria are all met
 - tests were written or updated first and pass (or the PR explains why none are needed)
+- CI is green
 - docs are updated where behavior changed
 - the PR checklist is complete and the change is merged
 
