@@ -20,6 +20,7 @@ The short version. Each links to the entries it came from.
 - Describe what exists; mark anything else as planned, with a link to its issue — [L2](#l2).
 - Test an automation once with a real item before relying on it; "on" isn't "working" — [L5](#l5).
 - Don't rely on an AI tool's defaults for hard-to-undo actions; write down a rule the tool enforces — [L6](#l6).
+- A step that is done every time but written nowhere will be skipped; write it where the doer reads it — [L7](#l7).
 
 **Status of an entry:** `Recorded` means written down; its prevention is planned or accepted as a risk.
 `Guarded` means something now enforces it (a check, test, ruleset, template or documented rule), linked in
@@ -28,6 +29,14 @@ the entry. A lesson that happens twice must become `Guarded`.
 ## Entries
 
 Newest first. Use the template in [CONTRIBUTING.md](../CONTRIBUTING.md#lessons-learned).
+
+### <a id="l7"></a>L7 · 2026-10-27: The AI usage comment was skipped at a merge
+**Tags:** Process · AI — **Status:** Recorded (rule in [CLAUDE.md](../CLAUDE.md); automated in [#9](https://github.com/vishwanathj/ocp_lab.ai/issues/9))
+- **Issue:** Every merge from [#2](https://github.com/vishwanathj/ocp_lab.ai/pull/2) to [#25](https://github.com/vishwanathj/ocp_lab.ai/pull/25#issuecomment-6282640477) posted the AI usage block as a PR comment. At the merge of [#29](https://github.com/vishwanathj/ocp_lab.ai/pull/29), Claude put the block in the squash commit but didn't post the comment; the maintainer noticed and it was posted afterward.
+- **Why it stayed hidden:** the comment was a habit, not a rule. CLAUDE.md and CONTRIBUTING only required the block in the squash commit, and the comment was mentioned only in #9's acceptance criteria, for a target that doesn't exist yet. The conversation's earlier context had been summarized, and the habit didn't survive it.
+- **Resolution:** Posted the block on #29.
+- **Prevention:** now — CLAUDE.md says to post the block as a PR comment right after the merge. Planned — `make merge` ([#9](https://github.com/vishwanathj/ocp_lab.ai/issues/9)) will post it, and fail loudly if it can't.
+- **Lesson:** A step that is done every time but written nowhere will eventually be skipped. Write it where the person or tool doing the step will read it, then automate it.
 
 ### <a id="l6"></a>L6 · 2026-10-27: What the AI could post to GitHub was decided only by the AI
 **Tags:** Process · Guardrails · AI — **Status:** Guarded ([`.claude/settings.json`](../.claude/settings.json), checked by [a test](../tests/unit/test_claude_settings.py))
