@@ -31,11 +31,11 @@ the entry. A lesson that happens twice must become `Guarded`.
 Newest first. Use the template in [CONTRIBUTING.md](../CONTRIBUTING.md#lessons-learned).
 
 ### <a id="l7"></a>L7 · 2026-10-27: The AI usage comment was skipped at a merge
-**Tags:** Process · AI — **Status:** Recorded (rule in [CLAUDE.md](../CLAUDE.md); automated in [#9](https://github.com/vishwanathj/ocp_lab.ai/issues/9))
+**Tags:** Process · AI — **Status:** Guarded ([`make merge`](../tools/merge.sh) posts the comment)
 - **Issue:** Every merge from [#2](https://github.com/vishwanathj/ocp_lab.ai/pull/2) to [#25](https://github.com/vishwanathj/ocp_lab.ai/pull/25#issuecomment-6282640477) posted the AI usage block as a PR comment. At the merge of [#29](https://github.com/vishwanathj/ocp_lab.ai/pull/29), Claude put the block in the squash commit but didn't post the comment; the maintainer noticed and it was posted afterward.
 - **Why it stayed hidden:** the comment was a habit, not a rule. CLAUDE.md and CONTRIBUTING only required the block in the squash commit, and the comment was mentioned only in #9's acceptance criteria, for a target that doesn't exist yet. The conversation's earlier context had been summarized, and the habit didn't survive it.
 - **Resolution:** Posted the block on #29.
-- **Prevention:** now — CLAUDE.md says to post the block as a PR comment right after the merge. Planned — `make merge` ([#9](https://github.com/vishwanathj/ocp_lab.ai/issues/9)) will post it, and fail loudly if it can't.
+- **Prevention:** `make merge` ([#9](https://github.com/vishwanathj/ocp_lab.ai/issues/9)) posts the block as a PR comment and fails loudly if it can't; CLAUDE.md says to merge with `make merge`.
 - **Lesson:** A step that is done every time but written nowhere will eventually be skipped. Write it where the person or tool doing the step will read it, then automate it.
 
 ### <a id="l6"></a>L6 · 2026-10-27: What the AI could post to GitHub was decided only by the AI
@@ -55,11 +55,11 @@ Newest first. Use the template in [CONTRIBUTING.md](../CONTRIBUTING.md#lessons-l
 - **Lesson:** "Turned on" doesn't mean "working". Test an automation once with a real item before relying on it.
 
 ### <a id="l4"></a>L4 · 2026-10-19: A green check meant "skipped", not "passed"
-**Tags:** Verification · Review · AI — **Status:** Guarded ([CONTRIBUTING](../CONTRIBUTING.md#merging) rule; automated check planned in [#9](https://github.com/vishwanathj/ocp_lab.ai/issues/9))
+**Tags:** Verification · Review · AI — **Status:** Guarded ([CONTRIBUTING](../CONTRIBUTING.md#merging) rule; checked by [`make merge`](../tools/merge_message.py))
 - **Issue:** Before merging [#24](https://github.com/vishwanathj/ocp_lab.ai/pull/24), the CodeRabbit check on the last commit was green, which looked like a clean review. Its description said "Review skipped: manual review required for this OSS repository": CodeRabbit had confirmed one fix in a comment thread, but hadn't reviewed the commit as a whole.
 - **Why it stayed hidden:** GitHub shows the check's color first; the description is only visible when you open it. A skipped review and a clean review look the same in the list of checks.
 - **Resolution:** Noticed while reading the check's details before merging. The maintainer accepted the in-thread confirmation, and the squash commit says the review was skipped.
-- **Prevention:** now — CONTRIBUTING says to read a check's description, not just its color, and to ask for a skipped review with `@coderabbitai review`. Planned — `make merge` ([#9](https://github.com/vishwanathj/ocp_lab.ai/issues/9)) will refuse to merge while the CodeRabbit status description says "skipped", unless told otherwise.
+- **Prevention:** CONTRIBUTING says to read a check's description, not just its color, and to ask for a skipped review with `@coderabbitai review`. `make merge` ([#9](https://github.com/vishwanathj/ocp_lab.ai/issues/9)) refuses while CodeRabbit didn't review the last commit (skipped or rate limited), unless `ALLOW_SKIPPED_REVIEW=1` is given.
 - **Lesson:** A green check only means the check didn't fail. Before trusting it, read what it actually did.
 
 ### <a id="l3"></a>L3 · 2026-10-14: A check passed although its setup step had failed
@@ -79,9 +79,9 @@ Newest first. Use the template in [CONTRIBUTING.md](../CONTRIBUTING.md#lessons-l
 - **Lesson:** Write documentation in the tense of reality: describe what exists, and label anything else as planned, with a link to its issue.
 
 ### <a id="l1"></a>L1 · 2026-10-07: Issues and pull requests share one number sequence
-**Tags:** Process · AI — **Status:** Guarded ([CONTRIBUTING](../CONTRIBUTING.md#branches-and-commits) rule; automated lookup planned in [#9](https://github.com/vishwanathj/ocp_lab.ai/issues/9))
+**Tags:** Process · AI — **Status:** Guarded ([CONTRIBUTING](../CONTRIBUTING.md#branches-and-commits) rule; [`make merge`](../tools/merge.sh) looks the PR up)
 - **Issue:** The plan called the first pull request "PR #1", but GitHub numbered it [#2](https://github.com/vishwanathj/ocp_lab.ai/pull/2) because issue #1 already had that number.
 - **Why it stayed hidden:** issue and pull request numbers look like separate counters, and nothing checked the number before it was used.
 - **Resolution:** Referred to the pull request by its real number, #2.
-- **Prevention:** now — CONTRIBUTING says to refer to "the PR for issue #N" until the PR exists. Planned — `make merge` ([#9](https://github.com/vishwanathj/ocp_lab.ai/issues/9)) will look up the pull request from the branch instead of taking an assumed number.
+- **Prevention:** CONTRIBUTING says to refer to "the PR for issue #N" until the PR exists, and `make merge` ([#9](https://github.com/vishwanathj/ocp_lab.ai/issues/9)) looks up the pull request from the branch instead of taking an assumed number.
 - **Lesson:** Never assume a pull request's number. Look it up, or refer to it by its issue.
