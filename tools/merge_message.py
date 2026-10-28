@@ -1,0 +1,99 @@
+"""Computes the AI usage block that `make merge` puts in the squash commit (issue #9).
+
+Runs in the dev container; it only reads Claude Code session logs, mounted read-only.
+"""
+
+import json
+from dataclasses import dataclass, field
+from datetime import datetime
+from pathlib import Path
+
+FIELDS = ("input", "output", "cache_read", "cache_write_5m", "cache_write_1h")
+
+
+@dataclass
+class Usage:
+    models: dict = field(default_factory=dict)  # model -> {field: tokens}
+    responses: int = 0
+    latest: datetime | None = None  # newest entry in any log, inside the window or not
+
+
+def load_pricing(path):
+    return json.loads(Path(path).read_text())
+
+
+def _time(text):
+    return datetime.fromisoformat(text.replace("Z", "+00:00"))
+
+
+def sum_usage(log_dir, start, end):
+    """Sum Claude Code usage from session logs between start and end, counting each response once."""
+    usage, seen = Usage(), set()
+    for path in sorted(Path(log_dir).glob("**/*.jsonl")):
+        for line in path.open(errors="ignore"):
+            try:
+                entry = json.loads(line)
+            except ValueError:
+                continue
+            message = entry.get("message") or {}
+            tokens, model = message.get("usage"), message.get("model")
+            if entry.get("type") != "assistant" or not tokens or not model or not entry.get("timestamp"):
+                continue
+            when = _time(entry["timestamp"])
+            usage.latest = max(usage.latest or when, when)
+            key = (message.get("id"), entry.get("requestId"))
+            if not start <= when <= end or key in seen:
+                continue
+            seen.add(key)
+            usage.responses += 1
+            split = tokens.get("cache_creation") or {}
+            if split:
+                write_5m = split.get("ephemeral_5m_input_tokens") or 0
+                write_1h = split.get("ephemeral_1h_input_tokens") or 0
+            else:  # older logs don't split cache writes; count them at the 5-minute rate
+                write_5m, write_1h = tokens.get("cache_creation_input_tokens") or 0, 0
+            totals = usage.models.setdefault(model, dict.fromkeys(FIELDS, 0))
+            totals["input"] += tokens.get("input_tokens") or 0
+            totals["output"] += tokens.get("output_tokens") or 0
+            totals["cache_read"] += tokens.get("cache_read_input_tokens") or 0
+            totals["cache_write_5m"] += write_5m
+            totals["cache_write_1h"] += write_1h
+    return usage
+
+
+def rate(value):
+    """A per-MTok rate as a price list writes it: $4, $0.20, $3.75."""
+    return f"${value:g}" if value == int(value) else f"${value:.2f}"
+
+
+def usage_block(usage, pricing, start, end):
+    if not usage.responses:
+        return "AI usage: none reported"
+    total = dict.fromkeys(FIELDS, 0)
+    for tokens in usage.models.values():
+        for name in FIELDS:
+            total[name] += tokens[name]
+    priced = sorted(m for m in usage.models if m in pricing["models"])
+    unpriced = sorted(m for m in usage.models if m not in pricing["models"])
+    cost = sum(usage.models[m][f] * pricing["models"][m][f] / 1e6 for m in priced for f in FIELDS)
+    rates = "; ".join(
+        f"{m}: {rate(r['input'])} in / {rate(r['output'])} out / {rate(r['cache_read'])} cache read"
+        f" / {rate(r['cache_write_5m'])} & {rate(r['cache_write_1h'])} cache write per MTok"
+        for m in priced for r in [pricing["models"][m]]
+    )
+    lines = [
+        "AI usage (Claude Code) — estimate",
+        f"- Window: {start:%Y-%m-%d %H:%M} → {end:%Y-%m-%d %H:%M} UTC (branch created → merge)",
+        f"- Model: {', '.join(sorted(usage.models))} · {usage.responses} responses",
+        f"- Tokens: input {total['input']:,} · output {total['output']:,} · cache read {total['cache_read']:,}"
+        f" · cache write 1h {total['cache_write_1h']:,} · cache write 5m {total['cache_write_5m']:,}",
+        f"- Estimated cost: ${cost:.2f} at API list prices ({rates}, checked {pricing['checked']});"
+        " billed via subscription, not per token",
+    ]
+    if unpriced:
+        lines.append(f"- Unpriced models: {', '.join(unpriced)} (not included in the cost)")
+    if usage.latest:
+        lines.append(f"- Log lag at merge: {(end - usage.latest).total_seconds():.0f} s,"
+                     " so the last response or two may be missing")
+    lines.append("- Not measured: CodeRabbit review; work before the branch existed")
+    return "\n".join(lines)
