@@ -9,6 +9,9 @@ The contribution rules above apply to everyone. These notes only add what is spe
   estimated cost at API list prices for the branch's window, plus what was not measured.
 - **Evidence:** show command or test output before calling something done. If a check could not run,
   say so plainly instead of claiming success.
+- **Posting to GitHub:** kickoff comments, opening PRs and pushing feature branches need no confirmation.
+  Merging, tagging, pushing tags or `main`, closing or deleting issues, releases, repository edits and
+  `gh api` calls that write always ask first; [.claude/settings.json](.claude/settings.json) enforces this.
 - **Secrets:** never ask for, print or store real tokens or pull secrets. Use fake values in tests.
 - **Lessons:** when something surprising happens, add an entry to
   [docs/lessons-learned.md](docs/lessons-learned.md) in the same pull request (tag `AI` when relevant).
