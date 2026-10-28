@@ -4,7 +4,7 @@ Session logs are fake, written by the tests; no real logs are read.
 """
 
 import json
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pytest
@@ -156,3 +156,11 @@ def test_the_pricing_table_is_dated_and_prices_the_current_model():
 def test_rates_are_written_like_a_price_list(rate, text):
     assert mm.rate(rate) == text
 
+
+def test_the_window_is_shown_in_utc_whatever_zone_it_was_given_in(tmp_path):
+    # merge.sh passes the branch's reflog time, which is in the maintainer's local zone.
+    local = timezone(timedelta(hours=-5))
+    logs = write_log(tmp_path, response("2026-10-27T11:00:00Z", input_tokens=1))
+    block = mm.usage_block(mm.sum_usage(logs, START, END), PRICING,
+                           START.astimezone(local), END.astimezone(local))
+    assert "- Window: 2026-10-27 10:00 → 2026-10-27 12:00 UTC" in block
