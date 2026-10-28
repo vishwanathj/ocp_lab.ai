@@ -43,6 +43,7 @@ Nothing else is installed on your machine; every tool runs inside the project's 
 |---|---|
 | `make test` | Runs the unit tests in the dev container, building the container first if needed |
 | `make clean` | Removes the dev container images; the next `make test` rebuilds them |
+| `make merge` | Maintainers only: squash-merges the current branch's PR (see [Merging](#merging)) |
 | `make help` | Lists every target |
 
 - The first `make test` downloads the base image and builds the container, which takes a minute.
@@ -92,7 +93,17 @@ Each role is described in more detail when it is first needed in the project.
 - **Read a check, not just its color.** A green check can mean "skipped": CodeRabbit marks a review it
   didn't run as a success, with the description "Review skipped…". A skipped review isn't a review; ask
   for one by commenting `@coderabbitai review`.
-- Squash commit messages keep the PR's summary, the `Closes #` line and the sign-off.
+- **`make merge`** does the merge, run on the PR's branch. It needs the GitHub CLI (`gh`) on your machine,
+  which is the only tool that runs outside the container, so no GitHub token ever enters one. It:
+  - finds the PR from the branch (`PR=N` is only a cross-check) and refuses if your branch isn't its
+    head commit;
+  - refuses while a required check hasn't passed (there is no override for that), and while CodeRabbit
+    didn't review the last commit, unless you give `ALLOW_SKIPPED_REVIEW=1`, which the message records;
+  - writes the squash message from the PR's **Summary**, its **Test evidence** (as "Tested:"), its `Closes #`
+    line, the AI usage block and your sign-off, merges with the admin override, and posts the usage block
+    as a PR comment. If the comment fails, it exits with an error and prints the block for you to post.
+
+  Try `make merge DRY_RUN=1` first: it prints the message and merges nothing.
 
 ## Definition of done
 
