@@ -155,12 +155,12 @@ def _section(body, heading):
 
 
 def commit_message(pr, block, models, review_note, signoff):
-    """(subject, body) for the squash commit: summary, review note, Closes, usage block, trailers."""
+    """(subject, body) for the squash commit: summary, test evidence, review note, Closes, usage block, trailers."""
     body = pr.get("body") or ""
     closes = re.findall(r"^\s*((?:closes|fixes|resolves) #\d+)", body, re.I | re.M)
     if not closes:
         raise ValueError("the PR description has no 'Closes #N' line")
-    parts = [_section(body, "Summary")] + ([review_note] if review_note else []) + ["\n".join(closes), block]
+    parts = [_section(body, "Summary"), "Tested:\n" + _section(body, "Test evidence")] + ([review_note] if review_note else []) + ["\n".join(closes), block]
     trailers = [signoff] + [f"Co-Authored-By: {CO_AUTHORS.get(m, m)} <noreply@anthropic.com>"
                             for m in sorted(models)]
     return f"{pr['title']} (#{pr['number']})", "\n\n".join(parts + ["\n".join(trailers)])
