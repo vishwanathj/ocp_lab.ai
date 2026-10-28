@@ -20,19 +20,30 @@ ASK_FIRST = [
     "git push origin v0.1.0",
     "git push origin --tags",
     "git push origin main",
+    "git push -u origin main",
+    "git push origin :refs/tags/v0.1.0",
+    "git push origin --delete 28-kickoff-and-posting-rules",
+    "git push -f origin 28-kickoff-and-posting-rules",
+    "git push --force-with-lease origin 28-kickoff-and-posting-rules",
+    "gh issue comment 28 --delete-last --yes",
+    "gh issue comment 28 --edit-last --body changed",
     "gh issue close 9",
     "gh issue delete 27 --yes",
     "gh release create v0.1.0",
     "gh repo edit --enable-wiki=false",
     "gh api -X PUT repos/vishwanathj/ocp_lab.ai/rulesets/24629416",
     "gh api repos/vishwanathj/ocp_lab.ai/rulesets/24629416 --method DELETE",
+    "gh api repos/vishwanathj/ocp_lab.ai/issues/9 --method=DELETE",
+    "gh api -XDELETE repos/vishwanathj/ocp_lab.ai/issues/9",
     "gh api graphql -f query=mutation",
+    "gh api graphql -fquery=mutation",
 ]
 
 NO_CONFIRMATION = [
     "gh issue comment 28 --body-file kickoff.md",
     "gh pr create --fill",
     "git push -u origin 28-kickoff-and-posting-rules",
+    "git push origin 31-fix-flaky-test",
 ]
 
 
