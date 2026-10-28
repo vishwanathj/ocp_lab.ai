@@ -1,9 +1,13 @@
-"""Computes the AI usage block and the merge decision for `make merge` (issue #9).
+"""Builds the squash commit message and AI usage comment for `make merge` (issue #9).
 
-Runs in the dev container; it only reads Claude Code session logs, mounted read-only.
+Runs in the dev container and never talks to GitHub: tools/merge.sh fetches the pull request and its
+checks on the host and passes them in as files.
 """
 
+import argparse
 import json
+import re
+import sys
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
@@ -136,3 +140,62 @@ def merge_decision(required_checks, head, allow_skipped_review):
                                           " merged with ALLOW_SKIPPED_REVIEW=1.")
     return Decision(False, f"CodeRabbit didn't review the last commit ({said}). Comment"
                            " `@coderabbitai review` and wait, or rerun with ALLOW_SKIPPED_REVIEW=1.")
+
+
+CO_AUTHORS = {"claude-opus-5-5": "Claude Opus 5.5"}
+
+
+def _section(body, heading):
+    """The text under `## heading` in a PR description, without the template's <!-- --> hints."""
+    match = re.search(rf"^## {heading}[ \t]*\n(.*?)(?=^## |\Z)", body, re.M | re.S)
+    text = re.sub(r"<!--.*?-->", "", match.group(1), flags=re.S).strip() if match else ""
+    if not text:
+        raise ValueError(f"the PR description has no ## {heading} section, or it is empty")
+    return text
+
+
+def commit_message(pr, block, models, review_note, signoff):
+    """(subject, body) for the squash commit: summary, review note, Closes, usage block, trailers."""
+    body = pr.get("body") or ""
+    closes = re.findall(r"^\s*((?:closes|fixes|resolves) #\d+)", body, re.I | re.M)
+    if not closes:
+        raise ValueError("the PR description has no 'Closes #N' line")
+    parts = [_section(body, "Summary")] + ([review_note] if review_note else []) + ["\n".join(closes), block]
+    trailers = [signoff] + [f"Co-Authored-By: {CO_AUTHORS.get(m, m)} <noreply@anthropic.com>"
+                            for m in sorted(models)]
+    return f"{pr['title']} (#{pr['number']})", "\n\n".join(parts + ["\n".join(trailers)])
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(description=__doc__)
+    for name in ("pr", "checks", "head", "logs", "start", "now", "signoff"):
+        parser.add_argument(f"--{name}", required=True)
+    parser.add_argument("--pricing", default=str(Path(__file__).with_name("pricing.json")))
+    parser.add_argument("--allow-skipped-review", choices=("", "1"), default="",
+                        help="1 merges although CodeRabbit didn't review the last commit")
+    parser.add_argument("--format", choices=("json", "nul"), default="json",
+                        help="nul: subject, message and comment, each ending in a NUL byte, for tools/merge.sh")
+    args = parser.parse_args(argv)
+    read = lambda path: json.loads(Path(path).read_text())
+    pr = read(args.pr)
+    decision = merge_decision(read(args.checks), read(args.head), args.allow_skipped_review == "1")
+    if not decision.ok:
+        print(f"make merge: refusing to merge PR #{pr['number']}: {decision.reason}", file=sys.stderr)
+        return 1
+    start, now = _time(args.start), _time(args.now)
+    usage = sum_usage(args.logs, start, now)
+    block = usage_block(usage, load_pricing(args.pricing), start, now)
+    try:
+        subject, message = commit_message(pr, block, list(usage.models), decision.review_note, args.signoff)
+    except ValueError as error:
+        print(f"make merge: refusing to merge PR #{pr['number']}: {error}", file=sys.stderr)
+        return 1
+    if args.format == "nul":
+        sys.stdout.write(f"{subject}\0{message}\0{block}\0")
+    else:
+        print(json.dumps({"subject": subject, "message": message, "comment": block}))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
