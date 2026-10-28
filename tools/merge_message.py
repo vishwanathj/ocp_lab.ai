@@ -9,7 +9,7 @@ import json
 import re
 import sys
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 FIELDS = ("input", "output", "cache_read", "cache_write_5m", "cache_write_1h")
@@ -73,6 +73,7 @@ def rate(value):
 def usage_block(usage, pricing, start, end):
     if not usage.responses:
         return "AI usage: none reported"
+    start, end = start.astimezone(timezone.utc), end.astimezone(timezone.utc)
     total = dict.fromkeys(FIELDS, 0)
     for tokens in usage.models.values():
         for name in FIELDS:
