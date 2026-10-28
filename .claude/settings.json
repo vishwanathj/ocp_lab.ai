@@ -8,6 +8,9 @@
     ],
     "ask": [
       "Bash(gh pr merge *)",
+      "Bash(make *merge*)",
+      "Bash(*merge.sh*)",
+      "Bash(* -c *make*merge*)",
       "Bash(git tag *)",
       "Bash(git push *--tags*)",
       "Bash(git push * main*)",
