@@ -1,0 +1,37 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(gh issue comment *)",
+      "Bash(gh pr create *)",
+      "Bash(git push -u origin *)",
+      "Bash(git push origin *)"
+    ],
+    "ask": [
+      "Bash(gh pr merge *)",
+      "Bash(git tag *)",
+      "Bash(git push *--tags*)",
+      "Bash(git push * main*)",
+      "Bash(git push origin m0*)",
+      "Bash(git push origin v*)",
+      "Bash(git push *:*)",
+      "Bash(git push *--delete*)",
+      "Bash(git push * -d *)",
+      "Bash(git push *--force*)",
+      "Bash(git push -f*)",
+      "Bash(git push * -f*)",
+      "Bash(gh issue comment *--delete*)",
+      "Bash(gh issue comment *--edit*)",
+      "Bash(gh issue close *)",
+      "Bash(gh issue delete *)",
+      "Bash(gh release *)",
+      "Bash(gh repo edit *)",
+      "Bash(gh api *-X*)",
+      "Bash(gh api *--method*)",
+      "Bash(gh api * -f*)",
+      "Bash(gh api * -F*)",
+      "Bash(gh api *--field*)",
+      "Bash(gh api *--raw-field*)",
+      "Bash(gh api *--input*)"
+    ]
+  }
+}

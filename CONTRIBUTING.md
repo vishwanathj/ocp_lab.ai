@@ -11,11 +11,28 @@ Every change follows the same path:
    milestones (`M01`, `M02`, …) and tracked on the [project board](https://github.com/users/vishwanathj/projects/2).
    Every new open issue is added to the board automatically, however it was created; check that it
    shows up there.
-2. **Feature branch** — create a branch from `main` named after the issue.
-3. **Pull request** — open a PR against `main`. The PR template asks for a summary, test evidence and a checklist.
-4. **Merge** — once reviewed, the PR is squashed (or rebased) into `main`, and the issue closes.
+2. **Kickoff comment** — when you start work, comment on the issue with four lines (see [Starting work](#starting-work)).
+3. **Feature branch** — create a branch from `main` named after the issue.
+4. **Pull request** — open a PR against `main`. The PR template asks for a summary, test evidence and a checklist.
+5. **Merge** — once reviewed, the PR is squashed (or rebased) into `main`, and the issue closes.
 
 Nothing is pushed straight to `main`; the repository's ruleset blocks it.
+
+### Starting work
+
+Issues are often written weeks before someone picks them up, and things change in between. Before the
+first commit, comment on the issue:
+
+```markdown
+**Kickoff**
+- **Assumptions:** what you're taking as given
+- **Dependencies:** issues or PRs this needs, and whether they're merged
+- **Open decisions:** anything the product owner still has to decide
+- **Changes to acceptance criteria:** what you propose to add, drop or change
+```
+
+"None" is a fine answer. If every line is "none", start. Otherwise the product owner answers in the
+issue before work starts, and any agreed change to the acceptance criteria is edited into the issue.
 
 ## Setting up
 

@@ -19,6 +19,7 @@ The short version. Each links to the entries it came from.
 - Never assume a pull request's number; look it up, or refer to it by its issue — [L1](#l1).
 - Describe what exists; mark anything else as planned, with a link to its issue — [L2](#l2).
 - Test an automation once with a real item before relying on it; "on" isn't "working" — [L5](#l5).
+- Don't rely on an AI tool's defaults for hard-to-undo actions; write down a rule the tool enforces — [L6](#l6).
 
 **Status of an entry:** `Recorded` means written down; its prevention is planned or accepted as a risk.
 `Guarded` means something now enforces it (a check, test, ruleset, template or documented rule), linked in
@@ -27,6 +28,14 @@ the entry. A lesson that happens twice must become `Guarded`.
 ## Entries
 
 Newest first. Use the template in [CONTRIBUTING.md](../CONTRIBUTING.md#lessons-learned).
+
+### <a id="l6"></a>L6 · 2026-10-27: What the AI could post to GitHub was decided only by the AI
+**Tags:** Process · Guardrails · AI — **Status:** Guarded ([`.claude/settings.json`](../.claude/settings.json), checked by [a test](../tests/unit/test_claude_settings.py))
+- **Issue:** Asked whether Claude had to confirm before commenting on an issue, nobody could point to a rule. Claude had been asking before outward-facing actions out of its own default; nothing in the repository said which actions need the maintainer's yes ([#28](https://github.com/vishwanathj/ocp_lab.ai/issues/28)).
+- **Why it stayed hidden:** the default was cautious, so nothing went wrong. A different session, model or tool could have behaved differently.
+- **Resolution:** Decided which actions need confirmation and wrote it down.
+- **Prevention:** `.claude/settings.json` makes Claude Code ask before merges, tags, closing or deleting issues, releases, repository edits and writing `gh api` calls; a unit test checks the rules; CLAUDE.md explains them.
+- **Lesson:** Don't rely on an AI tool's own defaults for actions that are hard to undo. Write the rule down where the tool enforces it.
 
 ### <a id="l5"></a>L5 · 2026-10-19: The board's auto-add filter had never matched anything
 **Tags:** Process · Guardrails · AI — **Status:** Guarded (board filter fixed; [CONTRIBUTING](../CONTRIBUTING.md#how-work-flows) rule)
