@@ -5,8 +5,9 @@
 The contribution rules above apply to everyone. These notes only add what is specific to Claude Code:
 
 - **Containers only:** run every tool through podman (docker as fallback). Never install packages on the host.
-- **Merging:** the squash commit carries an "AI usage (Claude Code) — estimate" block: token counts and
-  estimated cost at API list prices for the branch's window, plus what was not measured.
+- **Merging:** use `make merge` (after the maintainer's yes). It puts an "AI usage (Claude Code) —
+  estimate" block in the squash commit, with token counts and estimated cost at API list prices for the
+  branch's window, and posts the same block as a PR comment. Never merge by hand with `gh pr merge`.
 - **Evidence:** show command or test output before calling something done. If a check could not run,
   say so plainly instead of claiming success.
 - **Posting to GitHub:** kickoff comments, opening PRs and pushing feature branches need no confirmation.
