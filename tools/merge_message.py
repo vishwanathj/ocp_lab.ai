@@ -1,4 +1,4 @@
-"""Computes the AI usage block that `make merge` puts in the squash commit (issue #9).
+"""Computes the AI usage block and the merge decision for `make merge` (issue #9).
 
 Runs in the dev container; it only reads Claude Code session logs, mounted read-only.
 """
@@ -97,3 +97,42 @@ def usage_block(usage, pricing, start, end):
                      " so the last response or two may be missing")
     lines.append("- Not measured: CodeRabbit review; work before the branch existed")
     return "\n".join(lines)
+
+
+@dataclass
+class Decision:
+    ok: bool
+    reason: str = ""
+    review_note: str | None = None  # goes into the squash message when a skipped review was accepted
+
+
+# CodeRabbit reports a review it didn't run as success or neutral, with one of these in its text (L4).
+NOT_REVIEWED = ("skip", "rate limit", "paused")
+
+
+def _coderabbit(head):
+    """(conclusion, text) for each CodeRabbit result on the head commit, from check runs and statuses."""
+    results = [(r.get("conclusion"), (r.get("output") or {}).get("title") or "")
+               for r in head.get("check_runs", []) if r.get("name") == "CodeRabbit"]
+    results += [(s.get("state"), s.get("description") or "")
+                for s in head.get("statuses", []) if s.get("context") == "CodeRabbit"]
+    return results
+
+
+def merge_decision(required_checks, head, allow_skipped_review):
+    """Refuse on any required check that didn't pass (no override), or on a review that didn't run."""
+    if not required_checks:
+        return Decision(False, "no required checks found on the pull request; refusing to merge")
+    failing = [f"{c['name']} ({c['bucket']})" for c in required_checks if c.get("bucket") != "pass"]
+    if failing:
+        return Decision(False, "required checks did not pass: " + ", ".join(failing)
+                        + ". There is no override for a failing check.")
+    results = _coderabbit(head)
+    if any(state == "success" and not any(w in text.lower() for w in NOT_REVIEWED) for state, text in results):
+        return Decision(True)
+    said = "; ".join(text or state for state, text in results) or "no CodeRabbit check"
+    if allow_skipped_review:
+        return Decision(True, review_note=f"Review: CodeRabbit didn't review the last commit ({said});"
+                                          " merged with ALLOW_SKIPPED_REVIEW=1.")
+    return Decision(False, f"CodeRabbit didn't review the last commit ({said}). Comment"
+                           " `@coderabbitai review` and wait, or rerun with ALLOW_SKIPPED_REVIEW=1.")
