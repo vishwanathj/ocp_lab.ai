@@ -19,6 +19,15 @@ BODY = """Closes #9
 
 ## Developer notes
 Not part of the commit.
+
+## Test evidence
+<!-- Paste or link the output that proves it works. -->
+| Behavior | Red | Green |
+|---|---|---|
+| merge | abc123 ❌ | def456 ✅ |
+
+## Checklist
+- [x] Not part of the commit either
 """
 PR = {"number": 30, "title": "Add make merge", "body": BODY, "headRefOid": "abc123"}
 BLOCK = "AI usage (Claude Code) — estimate\n- Model: claude-opus-5-5 · 3 responses"
@@ -31,6 +40,7 @@ def test_the_message_keeps_the_summary_closes_usage_and_trailers():
     assert subject == "Add make merge (#30)"
     assert message == (
         "`make merge` merges a PR with its AI usage.\n\n- one command instead of five steps\n\n"
+        "Tested:\n| Behavior | Red | Green |\n|---|---|---|\n| merge | abc123 ❌ | def456 ✅ |\n\n"
         "Closes #9\n\n"
         f"{BLOCK}\n\n"
         f"{SIGNOFF}\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
@@ -39,7 +49,7 @@ def test_the_message_keeps_the_summary_closes_usage_and_trailers():
 
 def test_an_accepted_skipped_review_is_recorded_before_closes():
     _, message = mm.commit_message(PR, BLOCK, ["claude-opus-5-5"], "Review: skipped.", SIGNOFF)
-    assert "five steps\n\nReview: skipped.\n\nCloses #9" in message
+    assert "def456 ✅ |\n\nReview: skipped.\n\nCloses #9" in message
 
 
 def test_without_ai_usage_there_is_no_co_author():
@@ -56,6 +66,8 @@ def test_an_unknown_model_is_credited_by_its_id():
     ("## Summary\nText\n", "Closes #"),
     ("Closes #9\n\n## Developer notes\nText\n", "## Summary"),
     ("Closes #9\n\n## Summary\n<!-- only the template comment -->\n\n## Checklist\n", "## Summary"),
+    ("Closes #9\n\n## Summary\nText\n\n## Checklist\n", "## Test evidence"),
+    ("Closes #9\n\n## Summary\nText\n\n## Test evidence\n<!-- hint -->\n", "## Test evidence"),
 ])
 def test_a_pr_without_closes_or_a_summary_is_refused(body, missing):
     with pytest.raises(ValueError, match=missing):
