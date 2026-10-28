@@ -6,7 +6,8 @@ The contribution rules above apply to everyone. These notes only add what is spe
 
 - **Containers only:** run every tool through podman (docker as fallback). Never install packages on the host.
 - **Merging:** the squash commit carries an "AI usage (Claude Code) — estimate" block: token counts and
-  estimated cost at API list prices for the branch's window, plus what was not measured.
+  estimated cost at API list prices for the branch's window, plus what was not measured. Right after
+  the merge, post the same block as a PR comment.
 - **Evidence:** show command or test output before calling something done. If a check could not run,
   say so plainly instead of claiming success.
 - **Posting to GitHub:** kickoff comments, opening PRs and pushing feature branches need no confirmation.
