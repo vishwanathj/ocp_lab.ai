@@ -103,6 +103,7 @@ def usage_block(usage, pricing, start, end):
     if usage.latest:
         lines.append(f"- Log lag at merge: {(end - usage.latest).total_seconds():.0f} s,"
                      " so the last response or two may be missing")
+    lines.append("- Includes: every Claude Code session on this machine in the window, not only this branch's")
     lines.append("- Not measured: CodeRabbit review; work before the branch existed")
     return "\n".join(lines)
 
