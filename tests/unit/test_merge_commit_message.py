@@ -74,6 +74,13 @@ def test_a_pr_without_closes_or_a_summary_is_refused(body, missing):
         mm.commit_message({**PR, "body": body}, BLOCK, [], None, SIGNOFF)
 
 
+def test_a_description_with_windows_line_endings_reads_the_same():
+    # GitHub's web editor can save a PR description with CRLF line endings (CodeRabbit on #30).
+    crlf = {**PR, "body": BODY.replace("\n", "\r\n")}
+    assert (mm.commit_message(crlf, BLOCK, ["claude-opus-5-5"], None, SIGNOFF)
+            == mm.commit_message(PR, BLOCK, ["claude-opus-5-5"], None, SIGNOFF))
+
+
 def run_cli(tmp_path, *extra, checks=None, head=None):
     files = {
         "pr.json": PR,
