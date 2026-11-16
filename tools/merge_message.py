@@ -32,7 +32,7 @@ def _time(text):
 
 def sum_usage(log_dir, start, end):
     """Sum Claude Code usage from session logs between start and end, counting each response once."""
-    usage, seen = Usage(), set()
+    usage, best = Usage(), {}
     for path in sorted(Path(log_dir).glob("**/*.jsonl")):
         for line in path.open(errors="ignore"):
             try:
@@ -45,23 +45,26 @@ def sum_usage(log_dir, start, end):
                 continue
             when = _time(entry["timestamp"])
             usage.latest = max(usage.latest or when, when)
+            # A response can be logged more than once; keep the copy with the most output.
             key = (message.get("id"), entry.get("requestId"))
-            if not start <= when <= end or key in seen:
-                continue
-            seen.add(key)
-            usage.responses += 1
-            split = tokens.get("cache_creation") or {}
-            if split:
-                write_5m = split.get("ephemeral_5m_input_tokens") or 0
-                write_1h = split.get("ephemeral_1h_input_tokens") or 0
-            else:  # older logs don't split cache writes; count them at the 5-minute rate
-                write_5m, write_1h = tokens.get("cache_creation_input_tokens") or 0, 0
-            totals = usage.models.setdefault(model, dict.fromkeys(FIELDS, 0))
-            totals["input"] += tokens.get("input_tokens") or 0
-            totals["output"] += tokens.get("output_tokens") or 0
-            totals["cache_read"] += tokens.get("cache_read_input_tokens") or 0
-            totals["cache_write_5m"] += write_5m
-            totals["cache_write_1h"] += write_1h
+            if key not in best or (tokens.get("output_tokens") or 0) > (best[key][2].get("output_tokens") or 0):
+                best[key] = (when, model, tokens)
+    for when, model, tokens in best.values():
+        if not start <= when <= end:
+            continue
+        usage.responses += 1
+        split = tokens.get("cache_creation") or {}
+        if split:
+            write_5m = split.get("ephemeral_5m_input_tokens") or 0
+            write_1h = split.get("ephemeral_1h_input_tokens") or 0
+        else:  # older logs don't split cache writes; count them at the 5-minute rate
+            write_5m, write_1h = tokens.get("cache_creation_input_tokens") or 0, 0
+        totals = usage.models.setdefault(model, dict.fromkeys(FIELDS, 0))
+        totals["input"] += tokens.get("input_tokens") or 0
+        totals["output"] += tokens.get("output_tokens") or 0
+        totals["cache_read"] += tokens.get("cache_read_input_tokens") or 0
+        totals["cache_write_5m"] += write_5m
+        totals["cache_write_1h"] += write_1h
     return usage
 
 
