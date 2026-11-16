@@ -37,6 +37,12 @@ def show(value):
 if args[:2] == ["pr", "view"]:
     pr = state["pr"]
     show(str(pr[args[args.index("--jq") + 1].lstrip(".")]) if "--jq" in args else pr)
+elif args[:2] == ["pr", "checks"] and "--jq" in args:
+    # The re-check right before merging; gh evaluates the --jq expression itself.
+    assert args[args.index("--jq") + 1] == 'length > 0 and all(.bucket == "pass")', args
+    recheck = state.get("recheck", state["checks"])
+    show("true" if recheck and all(c["bucket"] == "pass" for c in recheck) else "false")
+    sys.exit(state.get("recheck_exit", 0))
 elif args[:2] == ["pr", "checks"] and "--json" in args:
     show(state["checks"])
     sys.exit(0 if all(c["bucket"] == "pass" for c in state["checks"]) else 8)
@@ -211,6 +217,14 @@ def test_refuses_when_a_check_stops_passing_before_the_merge(tmp_path, repo, gh_
     assert "no longer passing; nothing was merged" in result.stderr
     assert not called(result, "pr", "merge")
 
+
+@pytest.mark.parametrize("recheck", [[{"name": "make test", "bucket": "cancel"}], []], ids=["cancelled", "none"])
+def test_the_recheck_accepts_only_passing_checks(tmp_path, repo, gh_state, recheck):
+    # gh pr checks exits 0 when a required check was cancelled (CodeRabbit on #30), so its exit code isn't enough.
+    result = run_merge(tmp_path, repo, {**gh_state, "recheck": recheck})
+    assert result.returncode == 1
+    assert "no longer passing; nothing was merged" in result.stderr
+    assert not called(result, "pr", "merge")
 
 def test_a_failed_comment_exits_non_zero_and_prints_the_block(tmp_path, repo, gh_state):
     result = run_merge(tmp_path, repo, {**gh_state, "comment_exit": 1})
