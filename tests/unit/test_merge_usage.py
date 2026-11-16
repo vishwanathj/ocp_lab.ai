@@ -62,6 +62,14 @@ def test_counts_a_response_logged_twice_once(tmp_path):
     assert usage.models["claude-opus-5-5"]["input"] == 5
 
 
+def test_a_response_logged_again_with_more_output_keeps_the_larger_count(tmp_path):
+    # Some Claude Code versions reportedly log growing copies of one response (CodeRabbit on #30).
+    logs = write_log(tmp_path, response("2026-10-27T11:00:00Z", output_tokens=1),
+                     response("2026-10-27T11:00:01Z", output_tokens=100))
+    usage = mm.sum_usage(logs, START, END)
+    assert usage.responses == 1
+    assert usage.models["claude-opus-5-5"]["output"] == 100
+
 def test_splits_5_minute_and_1_hour_cache_writes(tmp_path):
     logs = write_log(tmp_path, response(
         "2026-10-27T11:00:00Z", cache_read_input_tokens=50, cache_creation_input_tokens=30,
