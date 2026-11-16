@@ -148,7 +148,7 @@ CO_AUTHORS = {"claude-opus-5-5": "Claude Opus 5.5"}
 
 def _section(body, heading):
     """The text under `## heading` in a PR description, without the template's <!-- --> hints."""
-    match = re.search(rf"^## {heading}[ \t]*\n(.*?)(?=^## |\Z)", body, re.M | re.S)
+    match = re.search(rf"^## {re.escape(heading)}[ \t]*\n(.*?)(?=^## |\Z)", body, re.M | re.S)
     text = re.sub(r"<!--.*?-->", "", match.group(1), flags=re.S).strip() if match else ""
     if not text:
         raise ValueError(f"the PR description has no ## {heading} section, or it is empty")
@@ -157,7 +157,7 @@ def _section(body, heading):
 
 def commit_message(pr, block, models, review_note, signoff):
     """(subject, body) for the squash commit: summary, test evidence, review note, Closes, usage block, trailers."""
-    body = pr.get("body") or ""
+    body = (pr.get("body") or "").replace("\r\n", "\n")  # the web editor can save CRLF
     closes = re.findall(r"^\s*((?:closes|fixes|resolves) #\d+)", body, re.I | re.M)
     if not closes:
         raise ValueError("the PR description has no 'Closes #N' line")
