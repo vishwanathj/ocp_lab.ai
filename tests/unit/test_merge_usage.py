@@ -128,6 +128,7 @@ def test_block_shows_tokens_cost_and_what_was_not_measured(tmp_path):
         "- Estimated cost: $10.40 at API list prices (claude-opus-5-5: $4 in / $20 out / $0.20 cache read "
         "/ $5 & $8 cache write per MTok, checked 2026-10-07); billed via subscription, not per token",
         "- Log lag at merge: 3600 s, so the last response or two may be missing",
+        "- Includes: every Claude Code session on this machine in the window, not only this branch's",
         "- Not measured: CodeRabbit review; work before the branch existed",
     ]
 
