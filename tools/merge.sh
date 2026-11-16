@@ -53,7 +53,10 @@ printf '%s' "$message" > "$tmp/message"
 printf '%s' "$comment" > "$tmp/comment"
 
 # A check can be rerun while the message is built; look again right before merging (CodeRabbit on #30).
-gh pr checks "$number" --required >/dev/null 2>&1 \
+# Same rule as merge_message.py: at least one required check, and every one passed. gh exits 0 for a
+# cancelled check, so its exit code alone isn't enough.
+recheck=$(gh pr checks "$number" --required --json bucket --jq 'length > 0 and all(.bucket == "pass")' 2>/dev/null) \
+  && [ "$recheck" = true ] \
   || die "a required check is no longer passing; nothing was merged. Run make merge again once it passes"
 
 if [ "${DRY_RUN:-}" = 1 ]; then
