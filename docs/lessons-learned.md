@@ -14,6 +14,7 @@ The short version. Each links to the entries it came from.
 **Verification**
 - Confirm a test's setup worked before trusting its result; script the setup — [L3](#l3).
 - Read what a check did, not just its color; "skipped" can show as green — [L4](#l4).
+- When a convention depends on a setting, check the setting allows nothing else — [L9](#l9).
 - Map every acceptance criterion to a test before any code; "no test needed" is the reviewer's call — [L8](#l8).
 
 **Process**
@@ -30,6 +31,14 @@ the entry. A lesson that happens twice must become `Guarded`.
 ## Entries
 
 Newest first. Use the template in [CONTRIBUTING.md](../CONTRIBUTING.md#lessons-learned).
+
+### <a id="l9"></a>L9 · 2026-11-16: Rebase merges were allowed, so a PR's failing commits could land on `main`
+**Tags:** Process · Guardrails — **Status:** Guarded (repository setting and the `main` ruleset allow squash only)
+- **Issue:** Asked whether a maintainer could merge from GitHub's PR page instead of `make merge`, the maintainer and Claude read the `main` ruleset: it allowed squash **and rebase** merges, and so did the repository setting. A tests-first PR has `Red:` commits that fail on purpose; [#30](https://github.com/vishwanathj/ocp_lab.ai/pull/30) has eight. A rebase merge from the button would have put all 17 commits on `main`.
+- **Why it stayed hidden:** every merge so far was a squash (`gh pr merge --squash`), so the other allowed method was never used. Rebase was allowed when linear history was set up, before PRs had failing commits by design.
+- **Resolution:** The repository setting and the ruleset now allow squash merges only; CONTRIBUTING says so.
+- **Prevention:** The setting itself: GitHub refuses any other merge method, from the button, `gh` or the API. A check that each commit on `main` came from `make merge` is proposed separately.
+- **Lesson:** A convention ("we always squash") is only as safe as the settings behind it. When a new practice relies on one, check the settings allow nothing else.
 
 ### <a id="l8"></a>L8 · 2026-11-16: The test review found untested safety checks, and approved tests that disagreed
 **Tags:** Testing · Process · AI — **Status:** Recorded (prevention planned in [#20](https://github.com/vishwanathj/ocp_lab.ai/issues/20))

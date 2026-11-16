@@ -14,7 +14,7 @@ Every change follows the same path:
 2. **Kickoff comment** — when you start work, comment on the issue with four lines (see [Starting work](#starting-work)).
 3. **Feature branch** — create a branch from `main` named after the issue.
 4. **Pull request** — open a PR against `main`. The PR template asks for a summary, test evidence and a checklist.
-5. **Merge** — once reviewed, the PR is squashed (or rebased) into `main`, and the issue closes.
+5. **Merge** — once reviewed, the PR is squashed into one commit on `main`, and the issue closes.
 
 Nothing is pushed straight to `main`; the repository's ruleset blocks it.
 
@@ -82,7 +82,7 @@ Each role is described in more detail when it is first needed in the project.
 ## Merging
 
 - `main` requires a pull request with **1 approval**, resolved review comments, linear history
-  (squash or rebase merges only; merge commits are disabled) and a green **`make test`** check.
+  (squash merges only, so the failing Red commits of a PR never reach `main`) and a green **`make test`** check.
 - **CI:** [`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs `make test` in the same dev container
   on every pull request and every push to `main`. If it passes on your machine, it should pass in CI.
 - **Solo-maintainer rule:** GitHub doesn't allow approving your own pull request. While the project has
