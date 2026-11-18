@@ -35,8 +35,14 @@ def show(value):
     print(value if isinstance(value, str) else json.dumps(value))
 
 if args[:2] == ["pr", "view"]:
-    pr = state["pr"]
-    show(str(pr[args[args.index("--jq") + 1].lstrip(".")]) if "--jq" in args else pr)
+    value = state["pr"]
+    if "--jq" in args:  # a path such as .number or .author.login
+        for key in args[args.index("--jq") + 1].lstrip(".").split("."):
+            value = value[key]
+    show(str(value) if "--jq" in args else value)
+elif args[:2] == ["api", "user"]:
+    assert args[2:] == ["--jq", ".login"], args
+    show(state["user"])
 elif args[:2] == ["pr", "checks"] and "--jq" in args:
     # The re-check right before merging; gh evaluates the --jq expression itself.
     assert args[args.index("--jq") + 1] == 'length > 0 and all(.bucket == "pass")', args
@@ -120,7 +126,9 @@ def repo(tmp_path):
 def gh_state(tmp_path, repo):
     """What the fake gh reports: a PR for the branch, a passing required check and a finished review."""
     return {
-        "pr": {"number": 30, "title": "Add make merge", "body": BODY, "headRefOid": git(repo, "rev-parse", "HEAD")},
+        "pr": {"number": 30, "title": "Add make merge", "body": BODY, "headRefOid": git(repo, "rev-parse", "HEAD"),
+               "author": {"login": "a-maintainer"}},
+        "user": "a-maintainer",
         "checks": [{"name": "make test", "bucket": "pass"}],
         "check_runs": [{"name": "CodeRabbit", "conclusion": "success", "output": {"title": "Review completed"}}],
         "statuses": [],
@@ -201,6 +209,16 @@ def test_refuses_when_the_local_branch_is_not_the_PR_head(tmp_path, repo, gh_sta
     assert result.returncode == 1
     assert "isn't the PR's head commit" in result.stderr
     assert not called(result, "pr", "merge")
+
+
+@pytest.mark.parametrize("dry_run", ["", "1"])
+def test_refuses_a_PR_someone_else_opened(tmp_path, repo, gh_state, dry_run):
+    # The usage block comes from the merger's own logs, so it is only right on the merger's own PR (#31).
+    state = {**gh_state, "pr": {**gh_state["pr"], "author": {"login": "a-contributor"}}}
+    result = run_merge(tmp_path, repo, state, DRY_RUN=dry_run)
+    assert result.returncode == 1
+    assert "PR #30 was opened by a-contributor, not you (a-maintainer)" in result.stderr
+    assert not called(result, "pr", "merge") and "Dry run" not in result.stdout
 
 
 def test_a_failing_required_check_merges_nothing(tmp_path, repo, gh_state):
