@@ -45,13 +45,13 @@ def sum_usage(log_dir, start, end):
                 continue
             when = _time(entry["timestamp"])
             usage.latest = max(usage.latest or when, when)
-            # A response can be logged more than once; keep the copy with the most output.
+            if not start <= when <= end:
+                continue
+            # A response can be logged more than once; keep the copy inside the window with the most output.
             key = (message.get("id"), entry.get("requestId"))
-            if key not in best or (tokens.get("output_tokens") or 0) > (best[key][2].get("output_tokens") or 0):
-                best[key] = (when, model, tokens)
-    for when, model, tokens in best.values():
-        if not start <= when <= end:
-            continue
+            if key not in best or (tokens.get("output_tokens") or 0) > (best[key][1].get("output_tokens") or 0):
+                best[key] = (model, tokens)
+    for model, tokens in best.values():
         usage.responses += 1
         split = tokens.get("cache_creation") or {}
         if split:
