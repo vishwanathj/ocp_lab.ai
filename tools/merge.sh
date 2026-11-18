@@ -23,6 +23,10 @@ number=$(gh pr view --json number --jq .number)
 sha=$(gh pr view --json headRefOid --jq .headRefOid)
 [ -z "${PR:-}" ] || [ "$PR" = "$number" ] || die "PR=$PR, but $branch belongs to PR #$number"
 [ "$(git rev-parse HEAD)" = "$sha" ] || die "local $branch isn't the PR's head commit ($sha); push or pull first"
+# The usage block comes from your own Claude Code logs, so it is only right on your own PR (#31).
+author=$(gh pr view --json author --jq .author.login)
+me=$(gh api user --jq .login) || die "couldn't look up your GitHub login"
+[ "$author" = "$me" ] || die "PR #$number was opened by $author, not you ($me); merge it on GitHub instead"
 
 # gh exits non-zero while checks fail or are pending; merge_message.py decides, and [] means "none found".
 gh pr checks "$number" --required --json name,bucket > "$tmp/checks.json" 2>/dev/null || true
