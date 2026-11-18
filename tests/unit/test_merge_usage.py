@@ -118,6 +118,20 @@ def test_an_entry_without_a_model_is_not_counted(tmp_path):
     assert usage.responses == 1
     assert list(usage.models) == ["claude-opus-5-5"]
 
+
+
+def test_messages_claude_code_wrote_itself_are_not_counted(tmp_path):
+    # Claude Code logs its own notices, such as "Login expired", with the model "<synthetic>".
+    logs = write_log(
+        tmp_path,
+        response("2026-10-27T11:00:00Z", "notice", model="<synthetic>", input_tokens=0, output_tokens=0),
+        response("2026-10-27T11:00:01Z", "named", input_tokens=1),
+    )
+    usage = mm.sum_usage(logs, START, END)
+    assert usage.responses == 1
+    assert list(usage.models) == ["claude-opus-5-5"]
+
+
 def test_latest_entry_is_kept_for_the_log_lag(tmp_path):
     logs = write_log(tmp_path, response("2026-10-27T12:30:00Z", input_tokens=1))
     assert mm.sum_usage(logs, START, END).latest == datetime(2026, 10, 27, 12, 30, tzinfo=timezone.utc)
