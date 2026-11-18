@@ -119,9 +119,10 @@ This list grows as the project gains tests, CI and release tooling.
 
 ## AI tools
 
-AI tools are optional. If a pull request was built with an AI assistant, its squash commit records an
-**AI usage** block: token counts and an estimated cost at API list prices. PRs built without AI simply
-have no such block. The same rules apply to every change, however it was written.
+AI tools are optional. A PR merged with `make merge` records an **AI usage** block in its squash
+commit: token counts and an estimated cost at API list prices, or "AI usage: none reported". The counts
+come from every Claude Code session on the merger's machine while the branch existed, not only this
+branch's. The same rules apply to every change, however it was written.
 
 If you use Claude Code, [CLAUDE.md](CLAUDE.md) imports this page and adds a few Claude-specific notes.
 Lessons about working with AI tools go in the project's [lessons log](#lessons-learned), tagged `AI`.
