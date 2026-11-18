@@ -10,6 +10,9 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 COPY requirements-dev.txt /tmp/requirements-dev.txt
 RUN pip install -r /tmp/requirements-dev.txt
 
+# git: the tools/merge.sh tests build a throwaway repository (issue #9).
+RUN apt-get update && apt-get install -y --no-install-recommends git && rm -rf /var/lib/apt/lists/*
+
 # Run as an unprivileged user; the source tree is mounted read-only at /work.
 RUN useradd --create-home --uid 1000 dev
 USER dev

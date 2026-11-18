@@ -14,7 +14,7 @@ Every change follows the same path:
 2. **Kickoff comment** — when you start work, comment on the issue with four lines (see [Starting work](#starting-work)).
 3. **Feature branch** — create a branch from `main` named after the issue.
 4. **Pull request** — open a PR against `main`. The PR template asks for a summary, test evidence and a checklist.
-5. **Merge** — once reviewed, the PR is squashed (or rebased) into `main`, and the issue closes.
+5. **Merge** — once reviewed, the PR is squashed into one commit on `main`, and the issue closes.
 
 Nothing is pushed straight to `main`; the repository's ruleset blocks it.
 
@@ -43,6 +43,7 @@ Nothing else is installed on your machine; every tool runs inside the project's 
 |---|---|
 | `make test` | Runs the unit tests in the dev container, building the container first if needed |
 | `make clean` | Removes the dev container images; the next `make test` rebuilds them |
+| `make merge` | Maintainers only: squash-merges the current branch's PR (see [Merging](#merging)) |
 | `make help` | Lists every target |
 
 - The first `make test` downloads the base image and builds the container, which takes a minute.
@@ -81,18 +82,28 @@ Each role is described in more detail when it is first needed in the project.
 ## Merging
 
 - `main` requires a pull request with **1 approval**, resolved review comments, linear history
-  (squash or rebase merges only; merge commits are disabled) and a green **`make test`** check.
+  (squash merges only, so the failing Red commits of a PR never reach `main`) and a green **`make test`** check.
 - **CI:** [`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs `make test` in the same dev container
   on every pull request and every push to `main`. If it passes on your machine, it should pass in CI.
 - **Solo-maintainer rule:** GitHub doesn't allow approving your own pull request. While the project has
   one maintainer, that maintainer may merge their own PRs with an admin override — only after
   self-reviewing against the PR template's checklist, and **only when CI is green**. The override
   replaces the missing approval, never a failing check. When a second maintainer joins, every PR gets
-  a real approval.
+  a real approval; [#31](https://github.com/vishwanathj/ocp_lab.ai/issues/31) lists what else changes.
 - **Read a check, not just its color.** A green check can mean "skipped": CodeRabbit marks a review it
   didn't run as a success, with the description "Review skipped…". A skipped review isn't a review; ask
   for one by commenting `@coderabbitai review`.
-- Squash commit messages keep the PR's summary, the `Closes #` line and the sign-off.
+- **`make merge`** does the merge, run on the PR's branch. It needs the GitHub CLI (`gh`) on your machine,
+  which is the only tool that runs outside the container, so no GitHub token ever enters one. It:
+  - finds the PR from the branch (`PR=N` is only a cross-check) and refuses if your branch isn't its
+    head commit, or if someone else opened the PR (the usage block comes from your own logs);
+  - refuses while a required check hasn't passed (there is no override for that), and while CodeRabbit
+    didn't review the last commit, unless you give `ALLOW_SKIPPED_REVIEW=1`, which the message records;
+  - writes the squash message from the PR's **Summary**, its **Test evidence** (as "Tested:"), its `Closes #`
+    line, the AI usage block and your sign-off, merges with the admin override, and posts the usage block
+    as a PR comment. If the comment fails, it exits with an error and prints the block for you to post.
+
+  Try `make merge DRY_RUN=1` first: it prints the message and merges nothing.
 
 ## Definition of done
 
@@ -108,9 +119,10 @@ This list grows as the project gains tests, CI and release tooling.
 
 ## AI tools
 
-AI tools are optional. If a pull request was built with an AI assistant, its squash commit records an
-**AI usage** block: token counts and an estimated cost at API list prices. PRs built without AI simply
-have no such block. The same rules apply to every change, however it was written.
+AI tools are optional. A PR merged with `make merge` records an **AI usage** block in its squash
+commit: token counts and an estimated cost at API list prices, or "AI usage: none reported". The counts
+come from every Claude Code session on the merger's machine while the branch existed, not only this
+branch's. The same rules apply to every change, however it was written.
 
 If you use Claude Code, [CLAUDE.md](CLAUDE.md) imports this page and adds a few Claude-specific notes.
 Lessons about working with AI tools go in the project's [lessons log](#lessons-learned), tagged `AI`.

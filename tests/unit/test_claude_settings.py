@@ -37,6 +37,15 @@ ASK_FIRST = [
     "gh api -XDELETE repos/vishwanathj/ocp_lab.ai/issues/9",
     "gh api graphql -f query=mutation",
     "gh api graphql -fquery=mutation",
+    "make merge",
+    "make merge PR=30 ALLOW_SKIPPED_REVIEW=1",
+    "make merge DRY_RUN=1",
+    "make -f Makefile merge",
+    "make -C . merge PR=30",
+    "tools/merge.sh",
+    "bash tools/merge.sh",
+    "bash -c 'make merge'",
+    "sh -c \"make merge DRY_RUN=1\"",
 ]
 
 NO_CONFIRMATION = [
