@@ -70,6 +70,18 @@ def test_a_response_logged_again_with_more_output_keeps_the_larger_count(tmp_pat
     assert usage.responses == 1
     assert usage.models["claude-opus-5-5"]["output"] == 100
 
+
+
+def test_a_copy_logged_after_the_window_does_not_replace_one_inside_it(tmp_path):
+    # Only copies inside the window compete; otherwise the response drops out (CodeRabbit on #30).
+    logs = write_log(tmp_path, response("2026-10-27T11:59:59Z", output_tokens=1),
+                     response("2026-10-27T12:00:01Z", output_tokens=100))
+    usage = mm.sum_usage(logs, START, END)
+    assert usage.responses == 1
+    assert usage.models["claude-opus-5-5"]["output"] == 1
+    assert usage.latest == datetime(2026, 10, 27, 12, 0, 1, tzinfo=timezone.utc)
+
+
 def test_splits_5_minute_and_1_hour_cache_writes(tmp_path):
     logs = write_log(tmp_path, response(
         "2026-10-27T11:00:00Z", cache_read_input_tokens=50, cache_creation_input_tokens=30,
