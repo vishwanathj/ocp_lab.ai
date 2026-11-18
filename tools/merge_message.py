@@ -41,7 +41,9 @@ def sum_usage(log_dir, start, end):
                 continue
             message = entry.get("message") or {}
             tokens, model = message.get("usage"), message.get("model")
-            if entry.get("type") != "assistant" or not tokens or not model or not entry.get("timestamp"):
+            # "<synthetic>" marks notices Claude Code wrote itself, such as "Login expired".
+            if (entry.get("type") != "assistant" or not tokens or not model or model == "<synthetic>"
+                    or not entry.get("timestamp")):
                 continue
             when = _time(entry["timestamp"])
             usage.latest = max(usage.latest or when, when)
