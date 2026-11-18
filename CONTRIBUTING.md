@@ -89,14 +89,14 @@ Each role is described in more detail when it is first needed in the project.
   one maintainer, that maintainer may merge their own PRs with an admin override — only after
   self-reviewing against the PR template's checklist, and **only when CI is green**. The override
   replaces the missing approval, never a failing check. When a second maintainer joins, every PR gets
-  a real approval.
+  a real approval; [#31](https://github.com/vishwanathj/ocp_lab.ai/issues/31) lists what else changes.
 - **Read a check, not just its color.** A green check can mean "skipped": CodeRabbit marks a review it
   didn't run as a success, with the description "Review skipped…". A skipped review isn't a review; ask
   for one by commenting `@coderabbitai review`.
 - **`make merge`** does the merge, run on the PR's branch. It needs the GitHub CLI (`gh`) on your machine,
   which is the only tool that runs outside the container, so no GitHub token ever enters one. It:
   - finds the PR from the branch (`PR=N` is only a cross-check) and refuses if your branch isn't its
-    head commit;
+    head commit, or if someone else opened the PR (the usage block comes from your own logs);
   - refuses while a required check hasn't passed (there is no override for that), and while CodeRabbit
     didn't review the last commit, unless you give `ALLOW_SKIPPED_REVIEW=1`, which the message records;
   - writes the squash message from the PR's **Summary**, its **Test evidence** (as "Tested:"), its `Closes #`
