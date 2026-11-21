@@ -16,5 +16,7 @@ The contribution rules above apply to everyone. These notes only add what is spe
 - **Secrets:** never ask for, print or store real tokens or pull secrets. Use fake values in tests.
 - **Lessons:** when something surprising happens, add an entry to
   [docs/lessons-learned.md](docs/lessons-learned.md) in the same pull request (tag `AI` when relevant).
+- **Progress deck:** there is one, kept by the product owner ([#21](https://github.com/vishwanathj/ocp_lab.ai/issues/21)).
+  Update it in place and never create another; if you don't have its link, ask.
 
 Skills and hooks are added later, once the procedures they describe have been done by hand.
