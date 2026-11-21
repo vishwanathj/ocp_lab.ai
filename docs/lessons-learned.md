@@ -23,6 +23,7 @@ The short version. Each links to the entries it came from.
 - Test an automation once with a real item before relying on it; "on" isn't "working" — [L5](#l5).
 - Don't rely on an AI tool's defaults for hard-to-undo actions; write down a rule the tool enforces — [L6](#l6).
 - A step that is done every time but written nowhere will be skipped; write it where the doer reads it — [L7](#l7).
+- Before making a shared document, find the one that exists and update it; never start a second — [L10](#l10).
 
 **Status of an entry:** `Recorded` means written down; its prevention is planned or accepted as a risk.
 `Guarded` means something now enforces it (a check, test, ruleset, template or documented rule), linked in
@@ -31,6 +32,14 @@ the entry. A lesson that happens twice must become `Guarded`.
 ## Entries
 
 Newest first. Use the template in [CONTRIBUTING.md](../CONTRIBUTING.md#lessons-learned).
+
+### <a id="l10"></a>L10 · 2026-11-21: A second progress deck was made because nobody checked for the first
+**Tags:** Process · AI — **Status:** Guarded ([CLAUDE.md](../CLAUDE.md) rule: one deck, updated in place)
+- **Issue:** Asked for presentation material for [#21](https://github.com/vishwanathj/ocp_lab.ai/issues/21), Claude built a new hosted deck. One already existed from 27 October, with 12 slides. The two had to be merged by hand into the October deck.
+- **Why it stayed hidden:** the October deck wasn't linked from anything in the repository, and the issue didn't mention it. Claude's own notes recorded it, but it didn't check them before creating a new one.
+- **Resolution:** The new deck's content went into the October deck, which is now the only one. The duplicate was deleted.
+- **Prevention:** CLAUDE.md says there is one progress deck, kept by the product owner, to be updated in place and never recreated. The deck's version history keeps every earlier version of its slides.
+- **Lesson:** Before making a document others will read, look for the one that already exists and update it. A second copy splits the material and one of them goes stale.
 
 ### <a id="l9"></a>L9 · 2026-11-16: Rebase merges were allowed, so a PR's failing commits could land on `main`
 **Tags:** Process · Guardrails — **Status:** Guarded (repository setting and the `main` ruleset allow squash only)
