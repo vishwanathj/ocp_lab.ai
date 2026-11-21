@@ -115,6 +115,11 @@ A change is done when:
 - docs are updated where behavior changed
 - the PR checklist is complete and the change is merged
 
+A milestone is done when all its issues are done and the **progress deck** has its slide: the
+milestone's goal, a demo and its main lesson. The product owner keeps the deck and shares it by link;
+it is rebuilt from GitHub (milestones, issues, the lessons log and each merge's AI usage block), so
+it holds nothing that isn't already here.
+
 This list grows as the project gains tests, CI and release tooling.
 
 ## AI tools
