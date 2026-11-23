@@ -30,9 +30,15 @@ def test_ci_runs_on_every_pull_request():
 
 
 def test_the_secret_scan_is_its_own_job():
-    # Its own job gives it its own check, which can be made required on main; it also runs when
-    # `make test` fails.
+    # Its own job gives it its own check, which can be made required on main.
     assert "make test" not in scan_job()
+
+
+def test_nothing_can_skip_the_scan_job():
+    # `if:` (e.g. push only) would skip the scan on pull requests, and `needs:` would skip it
+    # whenever the job it waits for fails; the tests above would still pass.
+    job = scan_job()
+    assert not re.search(r"^\s+(- )?(if|needs):", job, re.M), job
 
 
 def test_the_scan_job_checks_out_the_full_history():
