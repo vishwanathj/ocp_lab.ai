@@ -6,6 +6,7 @@ tool can't pass for a working hook. Tokens are generated at run time.
 """
 
 import os
+import re
 import shutil
 import stat
 import subprocess
@@ -136,7 +137,7 @@ def test_the_hook_blocks_a_commit_with_a_token(repo):
     result = commit(repo, env, "vars.yml", f"offline_token: {fake_offline_token()}\n")
     assert result.returncode != 0
     assert "commit blocked" in result.output
-    assert "offline-token" in result.output, result.output
+    assert re.search(r"^RuleID:\s+offline-token$", result.output, re.M), result.output
     assert commits(repo, env) == "0"
 
 

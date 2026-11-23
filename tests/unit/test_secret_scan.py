@@ -3,6 +3,9 @@
 Each test builds a throwaway git repository and scans it with the project's real .gitleaks.toml.
 A "blocked" test also checks which rule fired: a crash or a bad config fails the scan too, and the
 fake token would be caught by gitleaks' built-in rules even if the project's own rule were missing.
+
+The scanner's contract: exit 0 when nothing is found; otherwise exit non-zero and print one finding
+record per secret, with a `RuleID:` line (gitleaks' verbose report) and the secret redacted.
 """
 
 import re
@@ -41,7 +44,8 @@ def scan(repo, *flags):
 
 def assert_blocked_by(result, rule):
     assert result.returncode != 0, result.output
-    assert re.search(rf"\b{rule}\b", result.output), f"rule {rule} didn't fire:\n{result.output}"
+    # A finding record, not just the rule's name: an error message could mention the rule too.
+    assert re.search(rf"^RuleID:\s+{rule}$", result.output, re.M), f"no {rule} finding:\n{result.output}"
 
 
 def assert_passes(result):

@@ -26,7 +26,10 @@ def scan_job():
 
 
 def test_ci_runs_on_every_pull_request():
-    assert re.search(r"^on:\n(  .*\n)*  pull_request:", WORKFLOW, re.M)
+    trigger = re.search(r"^on:\n((?:  .*\n|\s*\n)*)", WORKFLOW, re.M)
+    assert trigger and re.search(r"^  pull_request:", trigger.group(1), re.M), WORKFLOW
+    # A path filter (e.g. only *.py) would skip the scan for a PR that adds a token to a YAML file.
+    assert not re.search(r"^\s+(paths|paths-ignore):", trigger.group(1), re.M), trigger.group(1)
 
 
 def test_the_secret_scan_is_its_own_job():
