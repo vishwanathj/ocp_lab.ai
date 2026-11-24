@@ -17,4 +17,6 @@ id = "pull-secret"
 description = "Registry login (base64 user:password) in a pull secret's auths"
 regex = '''"auth"\s*:\s*"([A-Za-z0-9+/]{20,}={0,2})"'''
 secretGroup = 1
-keywords = ["auths"]
+# gitleaks runs a rule only if a keyword is in the changed lines; editing just the `auth` line of a
+# saved pull secret leaves `auths` out of the change.
+keywords = ["\"auth\""]
