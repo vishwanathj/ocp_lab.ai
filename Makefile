@@ -10,8 +10,8 @@ IMAGE_TAG  := $(shell cat Containerfile requirements-dev.txt | git hash-object -
 IMAGE_NAME := localhost/ocp-lab-ai-dev
 IMAGE      := $(IMAGE_NAME):$(IMAGE_TAG)
 
-# Source is mounted read-only: tests must not change the working tree.
-RUN := $(ENGINE) run --rm -v "$(CURDIR)":/work:ro,Z $(IMAGE)
+# Source is mounted read-only: tests must not change the working tree. RUN_OPTS adds options for one target.
+RUN = $(ENGINE) run --rm $(RUN_OPTS) -v "$(CURDIR)":/work:ro,Z $(IMAGE)
 
 .PHONY: help setup image test secrets secrets-staged clean merge
 
@@ -34,6 +34,8 @@ test: image ## Run the unit tests in the dev container
 secrets: image ## Scan every commit for secrets (CI runs this)
 	$(RUN) tools/scan_secrets.sh /work
 
+# GIT_INDEX: the index to scan, as the container sees it; the pre-commit hook passes it (issue #8).
+secrets-staged: RUN_OPTS = $(if $(GIT_INDEX),-e GIT_INDEX_FILE=$(GIT_INDEX))
 secrets-staged: image ## Scan what is staged for the next commit (the pre-commit hook runs this)
 	@$(RUN) tools/scan_secrets.sh --staged /work
 
