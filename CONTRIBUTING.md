@@ -190,9 +190,24 @@ Three checks back this up:
 the change is urgent); CI scans the commit anyway, but by then it has been pushed. If a secret was
 ever pushed, treat it as leaked: revoke it, then remove it.
 
-Known limits: the hook doesn't work in a **git worktree**, whose git data is outside what the container
-can see, so it refuses there; use a normal clone. `git commit --amend` scans only the new changes, and
-merge commits don't run the hook; CI covers both.
+**Without podman or docker**, the hook blocks every commit, because it can't scan; install one (see
+[Setting up](#setting-up)). CI still scans your pull request.
+
+**If a secret reaches GitHub**, on any branch, every pull request's scan fails until it's dealt with:
+revoke the secret first, then ask a maintainer to remove it from the history or list it in a
+`.gitleaksignore` file.
+
+Known limits:
+- The hook refuses in a **git worktree**, whose git data is outside what the container can see; use a
+  normal clone.
+- Only `git commit` runs the hook. `--amend` scans only the new changes, and merges, `cherry-pick`,
+  `rebase`, `revert` and `git am` aren't scanned locally; CI scans all of them.
+- A branch created before the hook existed has no `.githooks/`, so git runs no hook there, silently.
+  Rebase it on `main`.
+- The hook doesn't see inside files git treats as binary (marked in `.gitattributes`, or containing a
+  NUL byte); CI does. Neither reads UTF-16 files, which some Windows tools write.
+- The first commit after `Containerfile` changes rebuilds the dev container inside the hook, which takes
+  a few minutes.
 
 Found a security problem? Report it [privately](https://github.com/vishwanathj/ocp_lab.ai/security/advisories/new),
 not as a public issue.
