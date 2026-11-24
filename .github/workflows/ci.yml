@@ -31,3 +31,19 @@ jobs:
 
       - name: Run the tests in the dev container
         run: make test
+
+  # Its own job, so it reports its own check and runs even when the tests fail (issue #8).
+  # Nothing may skip it: no `if:`, no `needs:`, no path filter on the trigger.
+  secrets:
+    name: make secrets
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          # Every commit, not just the last: a token removed later is still in the history.
+          fetch-depth: 0
+
+      - name: Scan every commit for secrets in the dev container
+        run: make secrets
