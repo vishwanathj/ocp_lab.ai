@@ -1,0 +1,20 @@
+# Secret-scan rules (issue #8): gitleaks' built-in rules, plus two for the credentials this
+# collection handles. A false positive can be allowed by ending its line with `# gitleaks:allow`.
+title = "ocp_lab.ai"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "offline-token"
+description = "Red Hat offline token (a JWT) assigned to an offline_token variable"
+regex = '''(?i)offline[_-]?token["']?\s*[:=]\s*["']?(eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,})'''
+secretGroup = 1
+keywords = ["offline_token", "offline-token", "offlinetoken"]
+
+[[rules]]
+id = "pull-secret"
+description = "Registry login (base64 user:password) in a pull secret's auths"
+regex = '''"auth"\s*:\s*"([A-Za-z0-9+/]{20,}={0,2})"'''
+secretGroup = 1
+keywords = ["auths"]
