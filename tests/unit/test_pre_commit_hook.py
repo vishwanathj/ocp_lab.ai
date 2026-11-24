@@ -36,7 +36,7 @@ if args[:2] == ["image", "inspect"] or args[0] == "build":
 # Like a real container, COMMAND sees none of the caller's environment, only what -e passes in:
 # git gives a hook variables such as GIT_INDEX_FILE, and a container doesn't inherit them.
 assert args[0] == "run", args
-mounts, env, env_args, i = {}, {"PATH": os.environ["PATH"], "HOME": "/tmp"}, [], 1
+mounts, env, env_args, i = {}, {"PATH": os.environ["PATH"], "HOME": "/nonexistent"}, [], 1
 while args[i].startswith("-"):
     if args[i] == "--rm":
         i += 1
@@ -55,13 +55,18 @@ def local(arg):
     for target, source in mounts.items():
         if arg == target or arg.startswith(target + "/"):
             return source + arg[len(target):]
+    # This fake runs on the host, so it could open any host path; a real container can't. Refuse,
+    # or a host path handed to the container (say, GIT_INDEX_FILE) would work here and not there.
+    if arg.startswith("/"):
+        sys.exit(f"fake engine: {arg} isn't inside a mounted directory, so a container can't see it")
     return arg
 
 for arg in env_args:  # mapped after every -v is known
     key, _, value = arg.partition("=")
     env[key] = local(value)
+command = [local(a) for a in command]
 os.chdir(mounts["/work"])
-sys.exit(subprocess.run([local(a) for a in command], env=env).returncode)
+sys.exit(subprocess.run(command, env=env).returncode)
 '''
 
 
@@ -145,17 +150,19 @@ def test_the_hook_blocks_a_commit_with_a_token(repo):
     assert commits(repo, env) == "0"
 
 
-@pytest.mark.parametrize("how", ["-a", "path"])
+@pytest.mark.parametrize("how", ["commit -a", "commit <file>"])
 def test_the_hook_blocks_a_token_committed_without_git_add(repo, how):
     # `git commit -a` and `git commit <file>` stage into a temporary index, which git names in
     # GIT_INDEX_FILE; the scan in the container must read that one, not .git/index.
     repo, env = repo
     setup(repo, env)
+    # A clean first commit, so vars.yml is tracked and `commit -a` picks up the change to it.
     assert commit(repo, env, "vars.yml", "name: clean\n").returncode == 0
     (repo / "vars.yml").write_text(f"offline_token: {fake_offline_token()}\n")
-    args = ["-a"] if how == "-a" else ["vars.yml"]
+    args = ["-a"] if how == "commit -a" else ["vars.yml"]
     result = run(repo, env, "git", "commit", "-q", "-m", "change vars", *args)
     assert result.returncode != 0
+    assert "commit blocked" in result.output
     assert re.search(r"^RuleID:\s+offline-token$", result.output, re.M), result.output
     assert commits(repo, env) == "1"
 
