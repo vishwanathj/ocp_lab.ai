@@ -30,6 +30,9 @@ def test_ci_runs_on_every_pull_request():
     assert trigger and re.search(r"^  pull_request:", trigger.group(1), re.M), WORKFLOW
     # A path filter (e.g. only *.py) would skip the scan for a PR that adds a token to a YAML file.
     assert not re.search(r"^\s+(paths|paths-ignore):", trigger.group(1), re.M), trigger.group(1)
+    # A types list without `synchronize` (e.g. only `opened`) would skip the scan on later pushes.
+    types = re.search(r"^\s+types:\s*(.*)$", trigger.group(1), re.M)
+    assert not types or "synchronize" in types.group(1), types.group(0)
 
 
 def test_the_secret_scan_is_its_own_job():

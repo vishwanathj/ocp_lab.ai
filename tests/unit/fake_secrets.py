@@ -33,10 +33,14 @@ def fake_offline_token():
                      b64url(secrets.token_bytes(64))])
 
 
-def fake_pull_secret():
-    """A random pull secret: registry logins whose `auth` is base64 of user:password."""
+def fake_pull_secret(indent=None):
+    """A random pull secret: registry logins whose `auth` is base64 of user:password.
+
+    With `indent`, it's spread over several lines, the way it is usually saved.
+    """
     auth = base64.b64encode(f"user:{secrets.token_urlsafe(48)}".encode()).decode()
-    return json.dumps({"auths": {"cloud.openshift.com": {"auth": auth, "email": "user@example.com"}}})
+    return json.dumps({"auths": {"cloud.openshift.com": {"auth": auth, "email": "user@example.com"}}},
+                      indent=indent)
 
 
 def git(repo, *args, env=GIT_ENV):
