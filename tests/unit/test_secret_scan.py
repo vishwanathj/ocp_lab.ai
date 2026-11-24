@@ -10,6 +10,7 @@ can't read the repository or the index, exit non-zero with "scan cannot run": gi
 report "no leaks found" and exit 0.
 """
 
+import json
 import re
 import subprocess
 from pathlib import Path
@@ -69,6 +70,13 @@ def test_a_staged_offline_token_is_blocked_by_the_project_rule(repo, line):
 
 def test_a_staged_pull_secret_is_blocked_by_the_project_rule(repo):
     stage(repo, "pull-secret.json", fake_pull_secret() + "\n")
+    assert_blocked_by(scan(repo, "--staged"), "pull-secret")
+
+
+def test_a_pull_secret_inside_a_json_string_is_blocked(repo):
+    # The assisted-service API carries the pull secret as a JSON *string*, so request bodies and
+    # examples hold it escaped: "pull_secret": "{\"auths\": {... \"auth\": \"...\"}}".
+    stage(repo, "request.json", json.dumps({"pull_secret": fake_pull_secret()}) + "\n")
     assert_blocked_by(scan(repo, "--staged"), "pull-secret")
 
 
@@ -174,6 +182,19 @@ def test_the_full_scan_finds_a_secret_added_in_a_merge_commit(repo):
     git(repo, "merge", "-q", "--no-ff", "--no-commit", "topic")
     stage(repo, "vars.yml", f"offline_token: {fake_offline_token()}\n")
     git(repo, "commit", "-q", "--no-verify", "-m", "merge topic")
+    assert_blocked_by(scan(repo), "offline-token")
+
+
+@pytest.mark.parametrize("how", ["marked binary", "nul byte"])
+def test_the_full_scan_reads_files_git_treats_as_binary(repo, how):
+    # git shows no contents for a file it treats as binary, so a scan of its diff would find nothing.
+    # Either .gitattributes says so, or git guesses it from a NUL byte.
+    token_line = f"offline_token: {fake_offline_token()}\n"
+    if how == "marked binary":
+        commit(repo, ".gitattributes", "*.env binary\n")
+        commit(repo, "creds.env", token_line)
+    else:
+        commit(repo, "notes.txt", "\x00" + token_line)
     assert_blocked_by(scan(repo), "offline-token")
 
 
