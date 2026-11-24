@@ -17,6 +17,7 @@ The short version. Each links to the entries it came from.
 - When a convention depends on a setting, check the setting allows nothing else — [L9](#l9).
 - Map every acceptance criterion to a test before any code; "no test needed" is the reviewer's call — [L8](#l8).
 - A test that expects a failure must check why it failed; with built-in rules, check your own rule fired — [L11](#l11).
+- A fake must be as limited as what it replaces; run the real thing once. A check that couldn't look must say so — [L12](#l12).
 
 **Process**
 - Never assume a pull request's number; look it up, or refer to it by its issue — [L1](#l1).
@@ -33,6 +34,14 @@ the entry. A lesson that happens twice must become `Guarded`.
 ## Entries
 
 Newest first. Use the template in [CONTRIBUTING.md](../CONTRIBUTING.md#lessons-learned).
+
+### <a id="l12"></a>L12 · 2026-11-24: Every test passed, but the real hook let a token through, twice
+**Tags:** Verification · Security · AI — **Status:** Guarded (the fake engine refuses what a container can't see; the scan refuses what it can't read: [test_pre_commit_hook.py](../tests/unit/test_pre_commit_hook.py), [test_secret_scan.py](../tests/unit/test_secret_scan.py))
+- **Issue:** In [#8](https://github.com/vishwanathj/ocp_lab.ai/issues/8), with all tests green, the real hook let a token through with `git commit -a`: git names that commit's temporary index in `GIT_INDEX_FILE`, which the container never received. CodeRabbit then found that when git can't read the repository or index, gitleaks reports "no leaks" and exits 0, so the hook failed *open*.
+- **Why it stayed hidden:** the tests' fake container passed the whole host environment and could open any host path, so it saw what a real container can't. And no test asked what the scan does when it sees nothing.
+- **Resolution:** the fake engine now starts from an empty environment and refuses host paths outside the mount; the hook passes the index as a `/work` path; the scanner checks that git can read before scanning and otherwise says "scan cannot run". The real hook was run in a scratch clone before and after.
+- **Prevention:** the tests above (Guarded); for anything that runs in a container, run the real thing once before calling it done.
+- **Lesson:** a fake must be as limited as what it replaces, where it matters. A safety check must say when it couldn't look, never "all clear".
 
 ### <a id="l11"></a>L11 · 2026-11-22: Tests for the project's secret rules would have passed with no rules at all
 **Tags:** Verification · Review · AI — **Status:** Guarded (the tests check which rule fired: [test_secret_scan.py](../tests/unit/test_secret_scan.py))

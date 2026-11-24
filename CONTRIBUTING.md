@@ -39,9 +39,15 @@ issue before work starts, and any agreed change to the acceptance criteria is ed
 You need three things on your machine: **podman** (or docker), **make** and **git**.
 Nothing else is installed on your machine; every tool runs inside the project's dev container.
 
+**After cloning, run `make setup` once.** It turns on the project's git hooks, including the one that
+scans every commit for secrets (see [Secrets](#secrets)). Git never runs a repository's hooks on its
+own, so a cloned project can't run code on your machine without your say-so; this is that say-so.
+
 | Command | What it does |
 |---|---|
+| `make setup` | Turns on the git hooks in `.githooks/`; run once after cloning (no container needed) |
 | `make test` | Runs the unit tests in the dev container, building the container first if needed |
+| `make secrets` | Scans every commit for secrets, as CI does |
 | `make clean` | Removes the dev container images; the next `make test` rebuilds them |
 | `make merge` | Maintainers only: squash-merges the current branch's PR (see [Merging](#merging)) |
 | `make help` | Lists every target |
@@ -84,7 +90,8 @@ Each role is described in more detail when it is first needed in the project.
 - `main` requires a pull request with **1 approval**, resolved review comments, linear history
   (squash merges only, so the failing Red commits of a PR never reach `main`) and a green **`make test`** check.
 - **CI:** [`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs `make test` in the same dev container
-  on every pull request and every push to `main`. If it passes on your machine, it should pass in CI.
+  on every pull request and every push to `main`, and `make secrets` in a job of its own. If they pass on
+  your machine, they should pass in CI.
 - **Solo-maintainer rule:** GitHub doesn't allow approving your own pull request. While the project has
   one maintainer, that maintainer may merge their own PRs with an admin override — only after
   self-reviewing against the PR template's checklist, and **only when CI is green**. The override
@@ -162,7 +169,30 @@ issues (an old editor, a local setup quirk) belong in your own notes. Most pull 
 
 This project talks to an API that needs Red Hat credentials. **Never** put tokens, pull secrets,
 passwords or internal hostnames in code, tests, examples, issues, PRs or commit messages.
-GitHub push protection is enabled and will reject pushes containing known token formats.
+Read them from the environment instead, e.g. `offline_token: "{{ lookup('env', 'OFFLINE_TOKEN') }}"`.
+
+Three checks back this up:
+
+1. **The pre-commit hook** (after `make setup`) scans what you're about to commit with
+   [gitleaks](https://github.com/gitleaks/gitleaks), in the dev container, using its built-in rules and
+   ours in [`.gitleaks.toml`](.gitleaks.toml) (offline tokens and pull secrets). A secret blocks the commit.
+2. **CI's `make secrets`** scans every commit of the pull request's history, merge commits included,
+   because deleting a secret in a later commit doesn't unpublish it.
+3. **GitHub push protection** rejects pushes containing well-known token formats.
+
+**"commit blocked"** means one of two things, and the lines above it say which:
+- **A secret was found.** gitleaks prints the file, line and rule, with the secret itself hidden. Remove it
+  and commit again. If it's a false positive, end that line with `# gitleaks:allow` and say why in the PR.
+- **The scan couldn't run** (podman isn't working, or git couldn't be read). The hook *fails closed*: it
+  blocks rather than guess. Fix the cause and commit again.
+
+`git commit --no-verify` skips the hook. Use it only when you must (for example, podman is broken and
+the change is urgent); CI scans the commit anyway, but by then it has been pushed. If a secret was
+ever pushed, treat it as leaked: revoke it, then remove it.
+
+Known limits: the hook doesn't work in a **git worktree**, whose git data is outside what the container
+can see, so it refuses there; use a normal clone. `git commit --amend` scans only the new changes, and
+merge commits don't run the hook; CI covers both.
 
 Found a security problem? Report it [privately](https://github.com/vishwanathj/ocp_lab.ai/security/advisories/new),
 not as a public issue.
