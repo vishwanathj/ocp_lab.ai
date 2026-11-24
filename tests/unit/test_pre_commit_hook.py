@@ -33,8 +33,10 @@ if args[:2] == ["image", "inspect"] or args[0] == "build":
     sys.exit(0)
 
 # `run [options] IMAGE COMMAND...`: run COMMAND here, with each -v mount mapped back to its source.
+# Like a real container, COMMAND sees none of the caller's environment, only what -e passes in:
+# git gives a hook variables such as GIT_INDEX_FILE, and a container doesn't inherit them.
 assert args[0] == "run", args
-mounts, env, i = {}, dict(os.environ), 1
+mounts, env, env_args, i = {}, {"PATH": os.environ["PATH"], "HOME": "/tmp"}, [], 1
 while args[i].startswith("-"):
     if args[i] == "--rm":
         i += 1
@@ -43,8 +45,7 @@ while args[i].startswith("-"):
         mounts[target] = source
         i += 2
     elif args[i] == "-e":
-        key, _, value = args[i + 1].partition("=")
-        env[key] = value
+        env_args.append(args[i + 1])
         i += 2
     else:
         sys.exit(f"fake engine: unknown option {args[i]} in {args}")
@@ -56,6 +57,9 @@ def local(arg):
             return source + arg[len(target):]
     return arg
 
+for arg in env_args:  # mapped after every -v is known
+    key, _, value = arg.partition("=")
+    env[key] = local(value)
 os.chdir(mounts["/work"])
 sys.exit(subprocess.run([local(a) for a in command], env=env).returncode)
 '''
@@ -139,6 +143,21 @@ def test_the_hook_blocks_a_commit_with_a_token(repo):
     assert "commit blocked" in result.output
     assert re.search(r"^RuleID:\s+offline-token$", result.output, re.M), result.output
     assert commits(repo, env) == "0"
+
+
+@pytest.mark.parametrize("how", ["-a", "path"])
+def test_the_hook_blocks_a_token_committed_without_git_add(repo, how):
+    # `git commit -a` and `git commit <file>` stage into a temporary index, which git names in
+    # GIT_INDEX_FILE; the scan in the container must read that one, not .git/index.
+    repo, env = repo
+    setup(repo, env)
+    assert commit(repo, env, "vars.yml", "name: clean\n").returncode == 0
+    (repo / "vars.yml").write_text(f"offline_token: {fake_offline_token()}\n")
+    args = ["-a"] if how == "-a" else ["vars.yml"]
+    result = run(repo, env, "git", "commit", "-q", "-m", "change vars", *args)
+    assert result.returncode != 0
+    assert re.search(r"^RuleID:\s+offline-token$", result.output, re.M), result.output
+    assert commits(repo, env) == "1"
 
 
 def test_the_hook_lets_a_clean_commit_through(repo):
