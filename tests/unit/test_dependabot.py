@@ -5,6 +5,7 @@ can't pass for the right one. Each ecosystem is checked against the folder Depen
 pointing at the wrong folder is valid YAML and opens no pull requests, ever.
 """
 
+import re
 from pathlib import Path
 
 import pytest
@@ -64,8 +65,12 @@ def test_each_ecosystem_waits_seven_days_before_proposing_a_new_release(ecosyste
 
 @pytest.mark.parametrize("ecosystem", ECOSYSTEMS)
 def test_each_ecosystem_groups_its_updates_into_one_pull_request(ecosystem):
+    # Only `patterns: ["*"]`: `applies-to: security-updates`, `update-types`, `exclude-patterns` or
+    # `dependency-type` would leave some version updates out of the group, each in a PR of its own.
     groups = entry(ecosystem).get("groups", {})
-    assert any(g.get("patterns") == ["*"] for g in groups.values()), groups
+    everything = {"patterns": ["*"]}
+    assert any({k: v for k, v in g.items() if (k, v) != ("applies-to", "version-updates")} == everything
+               for g in groups.values()), groups
 
 
 @pytest.mark.parametrize("ecosystem", ECOSYSTEMS)
@@ -73,9 +78,28 @@ def test_each_ecosystems_pull_requests_are_labelled_security_and_ci(ecosystem):
     assert {"type/security", "area/ci"} <= set(entry(ecosystem).get("labels", []))
 
 
+def base_image_name():
+    """The name Dependabot gives the last FROM's image: the registry is dropped for docker.io only."""
+    image = re.findall(r"^FROM\s+(\S+)", (ROOT / "Containerfile").read_text(), re.M)[-1]
+    name = re.split(r"[:@]", image, maxsplit=1)[0]
+    return name.removeprefix("docker.io/")
+
+
 def test_the_python_base_image_stays_on_its_python_version():
     # The base image tag is `3.12-slim`; Dependabot would propose `3.13-slim` as an update. Moving to a
     # new Python is a decision, not a routine update: only rebuilds of 3.12 (new digests) come through.
-    ignored = [i for i in entry("docker").get("ignore", []) if i.get("dependency-name") == "library/python"]
-    assert ignored, "no ignore rule for library/python"
-    assert {"version-update:semver-major", "version-update:semver-minor"} <= set(ignored[0].get("update-types", []))
+    # The name comes from the FROM line: `FROM python:…` would be `python`, and a rule for
+    # `library/python` would then match nothing, silently.
+    name = base_image_name()
+    blocked = {"version-update:semver-major", "version-update:semver-minor"}
+    rules = [i for i in entry("docker").get("ignore", []) if i.get("dependency-name") == name]
+    assert any(blocked <= set(r.get("update-types", [])) and "versions" not in r for r in rules), \
+        f"no ignore rule for {name} blocking {sorted(blocked)}: {rules}"
+
+
+def test_contributing_says_how_dependabot_pull_requests_are_reviewed_and_merged():
+    text = (ROOT / "CONTRIBUTING.md").read_text()
+    section = re.search(r"^#+ Dependabot pull requests$(.*?)(?=^#+ |\Z)", text, re.M | re.S)
+    assert section, "CONTRIBUTING has no 'Dependabot pull requests' section"
+    for point in ("approv", "changelog", "make merge"):
+        assert point in section.group(1).lower(), f"the section doesn't mention {point!r}"

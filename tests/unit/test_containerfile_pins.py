@@ -45,7 +45,8 @@ def test_gitleaks_comes_from_its_official_image():
 def test_nothing_is_downloaded_by_version_in_the_containerfile():
     # A version in a download URL (and its checksum) is a pin nothing updates.
     assert "releases/download" not in CONTAINERFILE
-    assert not re.search(r"^ARG\s+\w*_VERSION", CONTAINERFILE, re.M)
+    assert not re.search(r"^(ARG|ENV)\s+\w*_VERSION", CONTAINERFILE, re.M)
+    assert not re.search(r"\b(curl|wget|urlretrieve)\b", CONTAINERFILE), "the Containerfile downloads something"
 
 
 def test_the_installed_gitleaks_is_the_version_the_image_tag_names():
