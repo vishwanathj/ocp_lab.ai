@@ -22,11 +22,13 @@ def stages():
 def test_every_image_is_pinned_by_tag_and_digest():
     # The digest fixes the bytes; the tag tells Dependabot (and readers) which version it is. A digest
     # alone gets no version updates, and a tag alone can change under us.
-    names = {name for _, name in stages() if name}
-    for image, _ in stages():
-        if image in names:
-            continue  # an earlier stage of this file, not an image
-        assert PINNED.match(image), f"not pinned by tag and digest: {image}"
+    # Only a stage declared *earlier* can be referred to; `FROM alpine AS alpine` still pulls an image.
+    earlier = set()
+    for image, name in stages():
+        if image not in earlier:
+            assert PINNED.match(image), f"not pinned by tag and digest: {image}"
+        if name:
+            earlier.add(name)
 
 
 def gitleaks_stage():
