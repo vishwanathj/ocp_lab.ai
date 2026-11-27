@@ -1,6 +1,8 @@
 # Tools installed in the dev container. Pin exact versions, including dependencies,
 # so every build installs the same packages.
 pytest==9.1.1
+# Reads .github/dependabot.yml in its tests (issue #10)
+pyyaml==6.0.3
 
 # Dependencies of pytest
 iniconfig==2.3.1
