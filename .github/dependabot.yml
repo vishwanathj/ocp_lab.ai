@@ -1,7 +1,8 @@
 # Keeps the pinned tools up to date (issue #10): one grouped pull request per ecosystem, each week.
 # Every pin stays exact; Dependabot proposes the new pin and CI tests it before anyone merges.
-# Security updates don't wait for the schedule or the cooldown. How these PRs are reviewed and
-# merged: CONTRIBUTING.md, "Dependabot pull requests".
+# Security updates (GitHub Actions and pip only; Dependabot has none for images) don't wait for the
+# schedule or the cooldown. How these PRs are reviewed and merged: CONTRIBUTING.md, "Dependabot pull
+# requests".
 version: 2
 updates:
   # The actions in .github/workflows, pinned by commit SHA with the version in a comment.

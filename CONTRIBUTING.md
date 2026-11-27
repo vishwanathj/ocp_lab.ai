@@ -129,8 +129,9 @@ Each role is described in more detail when it is first needed in the project.
 
 [Dependabot](.github/dependabot.yml) keeps every pin up to date: the GitHub Actions, the dev container's
 images (the Python base and gitleaks) and the packages in `requirements-dev.txt`. Each week it opens at most
-one pull request per kind, labelled `type/security` and `area/ci`. A fix for a known vulnerability comes as
-soon as it's published, without waiting for the week.
+one pull request per kind, labelled `type/security` and `area/ci`. For GitHub Actions and Python packages,
+a fix for a known vulnerability also comes as soon as it's published, in a pull request of its own, without
+waiting for the week.
 
 To review and merge one:
 - **CI must pass:** both required checks run the new pin, so a broken update can't merge.
@@ -144,6 +145,10 @@ Known limits:
   pulled. Dependabot only does this for Docker Hub images, so gitleaks updates (from `ghcr.io`) don't wait.
 - The base image stays on **Python 3.12**: Dependabot brings rebuilds of `3.12-slim`, not `3.13-slim`. Moving
   to a new Python is an issue of its own.
+- Dependabot has no security updates for **container images**: a fixed vulnerability in the Python base or
+  gitleaks arrives with the weekly update (for the Python base, after its cooldown too).
+- If the weekly image PRs stop bringing rebuilds of `3.12-slim`, check that Dependabot still proposes
+  digest-only updates; a change on its side could stop them without any error.
 - CodeRabbit may skip bot PRs. Green CI plus reading the changelog is the review for these.
 
 ## Definition of done
