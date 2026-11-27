@@ -15,8 +15,10 @@ keywords = ["offline_token", "offline-token", "offlinetoken"]
 [[rules]]
 id = "pull-secret"
 description = "Registry login (base64 user:password) in a pull secret's auths"
-regex = '''"auth"\s*:\s*"([A-Za-z0-9+/]{20,}={0,2})"'''
+# Any number of backslashes may come before each quote: the API carries the pull secret as a JSON
+# string (\"auth\"), and a recorded response holding that body as a string escapes it again.
+regex = '''\\*"auth\\*"\s*:\s*\\*"([A-Za-z0-9+/]{20,}={0,2})\\*"'''
 secretGroup = 1
 # gitleaks runs a rule only if a keyword is in the changed lines; editing just the `auth` line of a
-# saved pull secret leaves `auths` out of the change.
-keywords = ["\"auth\""]
+# saved pull secret leaves `auths` out of the change. A bare `auth` also matches the escaped forms.
+keywords = ["auth"]
