@@ -100,7 +100,8 @@ Each role is described in more detail when it is first needed in the project.
 ## Merging
 
 - `main` requires a pull request with **1 approval**, resolved review comments, linear history
-  (squash merges only, so the failing Red commits of a PR never reach `main`) and a green **`make test`** check.
+  (squash merges only, so the failing Red commits of a PR never reach `main`) and two green checks,
+  **`make test`** and **`make secrets`**.
 - **CI:** [`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs `make test` in the same dev container
   on every pull request and every push to `main`, and `make secrets` in a job of its own. If they pass on
   your machine, they should pass in CI.
