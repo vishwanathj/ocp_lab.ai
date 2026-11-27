@@ -18,6 +18,7 @@ The short version. Each links to the entries it came from.
 - Map every acceptance criterion to a test before any code; "no test needed" is the reviewer's call — [L8](#l8).
 - A test that expects a failure must check why it failed; with built-in rules, check your own rule fired — [L11](#l11).
 - A fake must be as limited as what it replaces; run the real thing once. A check that couldn't look must say so — [L12](#l12).
+- Before writing tests, list every form the input takes and every way the tool skips; review the tests before approval — [L13](#l13).
 
 **Process**
 - Never assume a pull request's number; look it up, or refer to it by its issue — [L1](#l1).
@@ -34,6 +35,14 @@ the entry. A lesson that happens twice must become `Guarded`.
 ## Entries
 
 Newest first. Use the template in [CONTRIBUTING.md](../CONTRIBUTING.md#lessons-learned).
+
+### <a id="l13"></a>L13 · 2026-11-27: Reviewers kept finding inputs the tests had never tried
+**Tags:** Verification · Review · AI — **Status:** Guarded ([CONTRIBUTING.md: Writing the tests first](../CONTRIBUTING.md#writing-the-tests-first))
+- **Issue:** In [#8](https://github.com/vishwanathj/ocp_lab.ai/issues/8), after the tests were approved, reviewers found three inputs the scan missed. A pull secret inside a JSON string, the way the assisted-service API carries it. The same string escaped twice, as a recorded response stores it. And files git treats as binary, whose changes gitleaks skips. Each needed another Red commit and another approval.
+- **Why it stayed hidden:** the tests were written for the shapes the author had in mind: a pull secret saved as a file. Nobody listed the shapes the project's own API produces, or read gitleaks' source for when it skips input. The independent reviews came after the tests were approved, and the author's own second look shared the first one's assumptions.
+- **Resolution:** a read-only reviewer agent and CodeRabbit found the gaps; new Red tests cover all three, and the fixes land in the same pull request.
+- **Prevention:** CONTRIBUTING's [Writing the tests first](../CONTRIBUTING.md#writing-the-tests-first): list the input's forms, read how the tool skips, and review the tests before approving them.
+- **Lesson:** test the input as it really arrives, not as you picture it. Ask for an independent review while the tests can still change, not after they're approved.
 
 ### <a id="l12"></a>L12 · 2026-11-24: Every test passed, but the real hook let a token through, twice
 **Tags:** Verification · Security · AI — **Status:** Guarded (the fake engine refuses what a container can't see; the scan refuses what it can't read: [test_pre_commit_hook.py](../tests/unit/test_pre_commit_hook.py), [test_secret_scan.py](../tests/unit/test_secret_scan.py))

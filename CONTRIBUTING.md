@@ -34,6 +34,18 @@ first commit, comment on the issue:
 "None" is a fine answer. If every line is "none", start. Otherwise the product owner answers in the
 issue before work starts, and any agreed change to the acceptance criteria is edited into the issue.
 
+### Writing the tests first
+
+Tests are written from the acceptance criteria before the code, and fail until the code exists. Gaps
+found after that cost another round of review, so before writing them:
+
+- **List every form the input really takes,** not just the obvious one. A pull secret can be a file, a
+  string inside JSON, that string escaped again, YAML or base64. Write a test for each.
+- **Read how the tool you rely on decides to skip.** Check its documentation or source for input it
+  ignores, and for cases where it finds nothing and still reports success. Test each one.
+- **Get the tests reviewed before they're approved:** CodeRabbit, plus a second person or an independent
+  agent. Ask them whether any test could pass for the wrong reason, and what input it doesn't cover.
+
 ## Setting up
 
 You need three things on your machine: **podman** (or docker), **make** and **git**.
