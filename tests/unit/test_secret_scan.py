@@ -73,10 +73,15 @@ def test_a_staged_pull_secret_is_blocked_by_the_project_rule(repo):
     assert_blocked_by(scan(repo, "--staged"), "pull-secret")
 
 
-def test_a_pull_secret_inside_a_json_string_is_blocked(repo):
+@pytest.mark.parametrize("depth", [1, 2], ids=["escaped once", "escaped twice"])
+def test_a_pull_secret_inside_a_json_string_is_blocked(repo, depth):
     # The assisted-service API carries the pull secret as a JSON *string*, so request bodies and
-    # examples hold it escaped: "pull_secret": "{\"auths\": {... \"auth\": \"...\"}}".
-    stage(repo, "request.json", json.dumps({"pull_secret": fake_pull_secret()}) + "\n")
+    # examples hold it escaped: "pull_secret": "{\"auths\": {... \"auth\": \"...\"}}". A recorded
+    # response that stores such a body as a string again escapes it twice: \\\"auth\\\".
+    text = fake_pull_secret()
+    for _ in range(depth):
+        text = json.dumps({"pull_secret": text})
+    stage(repo, "request.json", text + "\n")
     assert_blocked_by(scan(repo, "--staged"), "pull-secret")
 
 
