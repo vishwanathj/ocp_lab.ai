@@ -33,8 +33,9 @@ if [ -n "$staged" ] && [ -n "${GIT_INDEX_FILE:-}" ]; then
     [ -r "$index" ] || cannot_run "can't read the index $GIT_INDEX_FILE"
 fi
 
-# The full scan also reads merge commits' own changes, which a plain `git log -p` leaves out.
-history="--log-opts=--all --full-history --diff-merges=first-parent"
+# The full scan also reads merge commits' own changes, which a plain `git log -p` leaves out, and
+# (--text) the contents of files git treats as binary, which gitleaks would otherwise skip.
+history="--log-opts=--all --full-history --diff-merges=first-parent --text"
 [ -z "$staged" ] || history=
 
 # shellcheck disable=SC2086 # $staged is two flags, or none
