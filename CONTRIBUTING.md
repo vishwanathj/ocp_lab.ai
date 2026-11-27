@@ -125,6 +125,27 @@ Each role is described in more detail when it is first needed in the project.
 
   Try `make merge DRY_RUN=1` first: it prints the message and merges nothing.
 
+### Dependabot pull requests
+
+[Dependabot](.github/dependabot.yml) keeps every pin up to date: the GitHub Actions, the dev container's
+images (the Python base and gitleaks) and the packages in `requirements-dev.txt`. Each week it opens at most
+one pull request per kind, labelled `type/security` and `area/ci`. A fix for a known vulnerability comes as
+soon as it's published, without waiting for the week.
+
+To review and merge one:
+- **CI must pass:** both required checks run the new pin, so a broken update can't merge.
+- **Read the changelog** Dependabot links in the PR, for anything that changes behavior or needs a change here.
+- **Approve it and merge it on GitHub** with the squash button. Dependabot opened the PR, so a maintainer's
+  approval is a real one, with no admin override. `make merge` refuses PRs someone else opened, and there's
+  no AI usage to record.
+
+Known limits:
+- New releases wait 7 days before Dependabot proposes them (the **cooldown**), so a broken one has time to be
+  pulled. Dependabot only does this for Docker Hub images, so gitleaks updates (from `ghcr.io`) don't wait.
+- The base image stays on **Python 3.12**: Dependabot brings rebuilds of `3.12-slim`, not `3.13-slim`. Moving
+  to a new Python is an issue of its own.
+- CodeRabbit may skip bot PRs. Green CI plus reading the changelog is the review for these.
+
 ## Definition of done
 
 A change is done when:
