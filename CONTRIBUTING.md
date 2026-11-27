@@ -206,8 +206,11 @@ Known limits:
   Rebase it on `main`.
 - The hook doesn't see inside files git treats as binary (marked in `.gitattributes`, or containing a
   NUL byte); CI does. Neither reads UTF-16 files, which some Windows tools write.
-- The first commit after `Containerfile` changes rebuilds the dev container inside the hook, which takes
-  a few minutes.
+- gitleaks' built-in rules skip some paths without saying so: images, PDFs and other binary formats,
+  `.gitleaks.toml` itself, and Python virtual environments such as `venv/`. Don't keep
+  credentials in such files either.
+- The first commit after `Containerfile` or `requirements-dev.txt` changes rebuilds the dev container
+  inside the hook, which takes a few minutes.
 
 Found a security problem? Report it [privately](https://github.com/vishwanathj/ocp_lab.ai/security/advisories/new),
 not as a public issue.
