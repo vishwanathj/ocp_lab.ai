@@ -1,0 +1,29 @@
+#!/bin/sh
+# Blocks a commit that contains a secret (issue #8). `make setup` turns it on.
+#
+# It scans what is staged with gitleaks, in the dev container. If the scan finds a secret, or can't
+# run at all (no podman or docker, or the engine fails), the commit is blocked: it fails closed.
+# `git commit --no-verify` skips it; CI scans every commit as the backstop.
+cd "$(git rev-parse --show-toplevel)" || exit 1
+
+blocked() {
+    echo "pre-commit: commit blocked: $*" >&2
+    exit 1
+}
+
+# git names the index this commit will record in GIT_INDEX_FILE: .git/index, or a temporary one for
+# `git commit -a` and `git commit <file>`. The container sees this checkout at /work, so translate
+# the path; an index outside the checkout (a git worktree, for example) can't be scanned.
+index=${GIT_INDEX_FILE:-.git/index}
+case $index in
+    /*) dir=$(cd "$(dirname "$index")" && pwd -P) || blocked "can't find the index $index"
+        index=$dir/$(basename "$index") ;;
+    *)  index=$(pwd -P)/$index ;;
+esac
+case $index in
+    "$(pwd -P)"/*) index=/work/${index#"$(pwd -P)"/} ;;
+    *) blocked "the index $index is outside this checkout, so the scan can't read it (see CONTRIBUTING, Secrets)" ;;
+esac
+
+make --no-print-directory -s secrets-staged GIT_INDEX="$index" ||
+    blocked "the secret scan found a secret or could not run (see above)."

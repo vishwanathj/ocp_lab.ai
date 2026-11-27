@@ -16,6 +16,9 @@ The short version. Each links to the entries it came from.
 - Read what a check did, not just its color; "skipped" can show as green — [L4](#l4).
 - When a convention depends on a setting, check the setting allows nothing else — [L9](#l9).
 - Map every acceptance criterion to a test before any code; "no test needed" is the reviewer's call — [L8](#l8).
+- A test that expects a failure must check why it failed; with built-in rules, check your own rule fired — [L11](#l11).
+- A fake must be as limited as what it replaces; run the real thing once. A check that couldn't look must say so — [L12](#l12).
+- Before writing tests, list every form the input takes and every way the tool skips; review the tests before approval — [L13](#l13).
 
 **Process**
 - Never assume a pull request's number; look it up, or refer to it by its issue — [L1](#l1).
@@ -32,6 +35,30 @@ the entry. A lesson that happens twice must become `Guarded`.
 ## Entries
 
 Newest first. Use the template in [CONTRIBUTING.md](../CONTRIBUTING.md#lessons-learned).
+
+### <a id="l13"></a>L13 · 2026-11-27: Reviewers kept finding inputs the tests had never tried
+**Tags:** Verification · Review · AI — **Status:** Guarded ([CONTRIBUTING.md: Writing the tests first](../CONTRIBUTING.md#writing-the-tests-first))
+- **Issue:** In [#8](https://github.com/vishwanathj/ocp_lab.ai/issues/8), after the tests were approved, reviewers found three inputs the scan missed. A pull secret inside a JSON string, the way the assisted-service API carries it. The same string escaped twice, as a recorded response stores it. And files git treats as binary, whose changes gitleaks skips. Each needed another Red commit and another approval.
+- **Why it stayed hidden:** the tests were written for the shapes the author had in mind: a pull secret saved as a file. Nobody listed the shapes the project's own API produces, or read gitleaks' source for when it skips input. The independent reviews came after the tests were approved, and the author's own second look shared the first one's assumptions.
+- **Resolution:** a read-only reviewer agent and CodeRabbit found the gaps; new Red tests cover all three, and the fixes land in the same pull request.
+- **Prevention:** CONTRIBUTING's [Writing the tests first](../CONTRIBUTING.md#writing-the-tests-first): list the input's forms, read how the tool skips, and review the tests before approving them.
+- **Lesson:** test the input as it really arrives, not as you picture it. Ask for an independent review while the tests can still change, not after they're approved.
+
+### <a id="l12"></a>L12 · 2026-11-24: Every test passed, but the real hook let a token through, twice
+**Tags:** Verification · Security · AI — **Status:** Guarded (the fake engine refuses what a container can't see; the scan refuses what it can't read: [test_pre_commit_hook.py](../tests/unit/test_pre_commit_hook.py), [test_secret_scan.py](../tests/unit/test_secret_scan.py))
+- **Issue:** In [#8](https://github.com/vishwanathj/ocp_lab.ai/issues/8), with all tests green, the real hook let a token through with `git commit -a`: git names that commit's temporary index in `GIT_INDEX_FILE`, which the container never received. CodeRabbit then found that when git can't read the repository or index, gitleaks reports "no leaks" and exits 0, so the hook failed *open*.
+- **Why it stayed hidden:** the tests' fake container passed the whole host environment and could open any host path, so it saw what a real container can't. And no test asked what the scan does when it sees nothing.
+- **Resolution:** the fake engine now starts from an empty environment and refuses host paths outside the mount; the hook passes the index as a `/work` path; the scanner checks that git can read before scanning and otherwise says "scan cannot run". The real hook was run in a scratch clone before and after.
+- **Prevention:** the tests above (Guarded); for anything that runs in a container, run the real thing once before calling it done.
+- **Lesson:** a fake must be as limited as what it replaces, where it matters. A safety check must say when it couldn't look, never "all clear".
+
+### <a id="l11"></a>L11 · 2026-11-22: Tests for the project's secret rules would have passed with no rules at all
+**Tags:** Verification · Review · AI — **Status:** Guarded (the tests check which rule fired: [test_secret_scan.py](../tests/unit/test_secret_scan.py))
+- **Issue:** The first Red tests for [#8](https://github.com/vishwanathj/ocp_lab.ai/issues/8) checked only that a fake offline token and pull secret were "blocked". The fake token is a JWT, which gitleaks' built-in rules already catch, so the tests would pass with an empty `.gitleaks.toml`. A crash or a bad config would have passed as "blocked" too.
+- **Why it stayed hidden:** every test failed in the Red run, as it should, and the assertions read as right. Nothing asked *why* a scan would fail once the code existed.
+- **Resolution:** a read-only reviewer agent and CodeRabbit found it before the test review. Blocked tests now check the rule ID or the reason in the output, and new tests cover the index vs. the working tree, a clean history and the repository's own history.
+- **Prevention:** the tests themselves (Guarded); the review question "could this pass for the wrong reason?" is now part of the test review.
+- **Lesson:** a "rejected" test must check why it was rejected. When a tool has built-in behavior, test that *your* part fired.
 
 ### <a id="l10"></a>L10 · 2026-11-21: A second progress deck was made because nobody checked for the first
 **Tags:** Process · AI — **Status:** Guarded ([CLAUDE.md](../CLAUDE.md) rule: one deck, updated in place)
