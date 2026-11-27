@@ -1,4 +1,4 @@
-# Runs the same `make test` that contributors run locally, in the same dev container.
+# Runs the same `make test` and `make secrets` that contributors run locally, in the same dev container.
 name: CI
 
 on:
