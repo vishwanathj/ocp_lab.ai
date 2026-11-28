@@ -37,12 +37,13 @@ the entry. A lesson that happens twice must become `Guarded`.
 
 Newest first. Use the template in [CONTRIBUTING.md](../CONTRIBUTING.md#lessons-learned).
 
-### <a id="l14"></a>L14 · 2026-11-27: Dependabot accepts a cooldown for every image but applies it to some
-**Tags:** Verification · Review · AI — **Status:** Recorded (accepted risk: documented in [CONTRIBUTING.md](../CONTRIBUTING.md#dependabot-pull-requests); gitleaks PRs are still reviewed before merging)
+### <a id="l14"></a>L14 · 2026-11-27: Dependabot accepts settings for every pin but applies them to some
+**Tags:** Verification · Review · AI — **Status:** Recorded after two cases (accepted risk: there's no practical automated guard, and the product owner accepted that on [PR #37](https://github.com/vishwanathj/ocp_lab.ai/pull/37); both limits are documented in [CONTRIBUTING.md](../CONTRIBUTING.md#dependabot-pull-requests), and Dependabot PRs are still reviewed before merging)
 - **Issue:** In [#10](https://github.com/vishwanathj/ocp_lab.ai/issues/10), `.github/dependabot.yml` sets a 7-day cooldown for the container images, and a test checks it's there. Dependabot accepts it, but applies it only to Docker Hub images; for gitleaks on `ghcr.io` it logs "skipping cooldown" and proposes new releases at once.
+  - **A second case, in the same PR:** Dependabot security updates were switched on, and the docs said every pin would get them. Only pip does. Dependabot has no security updates for container images, and GitHub raises no alerts for Actions pinned by SHA. An independent reviewer and CodeRabbit each corrected the docs ([9e5c112](https://github.com/vishwanathj/ocp_lab.ai/commit/9e5c112), [655eace](https://github.com/vishwanathj/ocp_lab.ai/commit/655eace)).
 - **Why it stayed hidden:** the setting is valid, the documentation lists cooldown for the docker ecosystem, and the test of the config passes. Nothing that a test or a reader of the config sees says it's ignored.
 - **Resolution:** an independent reviewer found it in Dependabot's source before the test review ([`update_checker.rb`](https://github.com/dependabot/dependabot-core/blob/main/docker/lib/dependabot/docker/update_checker.rb)). The product owner accepted it; the acceptance criterion and CONTRIBUTING say so.
-- **Prevention:** accepted risk; CONTRIBUTING's [Writing the tests first](../CONTRIBUTING.md#writing-the-tests-first) already asks to read how a tool decides to skip, which is how this was found.
+- **Prevention:** accepted risk (a test of the config can't see what Dependabot skips, and the second case was in prose, not a setting); CONTRIBUTING's [Writing the tests first](../CONTRIBUTING.md#writing-the-tests-first) already asks to read how a tool decides to skip, which is how this was found.
 - **Lesson:** a test of a config proves the setting is written, not that the tool honours it. For a setting that matters, find where the tool applies it: its source, its logs, or a real run.
 
 ### <a id="l13"></a>L13 · 2026-11-27: Reviewers kept finding inputs the tests had never tried
