@@ -167,6 +167,18 @@ def test_the_hook_blocks_a_token_committed_without_git_add(repo, how):
     assert commits(repo, env) == "1"
 
 
+def test_the_hook_blocks_a_commit_when_git_reports_a_problem_during_the_scan(repo):
+    # gitleaks would say "no leaks found" and exit 0 (issue #42); the hook must block instead.
+    repo, env = repo
+    setup(repo, env)
+    (repo / ".gitattributes").write_text("*.yml -!x\n")
+    result = commit(repo, env, "vars.yml", f"offline_token: {fake_offline_token()}\n")
+    assert result.returncode != 0
+    assert "commit blocked" in result.output
+    assert "scan cannot run" in result.output, result.output
+    assert commits(repo, env) == "0"
+
+
 def test_the_hook_lets_a_clean_commit_through(repo):
     repo, env = repo
     setup(repo, env)

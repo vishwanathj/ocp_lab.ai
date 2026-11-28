@@ -161,6 +161,47 @@ def test_a_staged_scan_with_a_missing_index_file_cannot_run(repo):
     assert_cannot_run(scan(repo, "--staged", env={"GIT_INDEX_FILE": "/nonexistent/index"}))
 
 
+# gitleaks reads the changes from a git command it runs itself. If git writes anything to its error
+# output, apart from a few notices gitleaks knows are harmless, gitleaks stops reading, logs an error,
+# says "no leaks found" and exits 0 (issue #42). Each problem below makes git complain on every command.
+GIT_PROBLEMS = {
+    "invalid attribute name": lambda repo: (repo / ".gitattributes").write_text("*.yml -!x\n"),
+    "negative attribute pattern": lambda repo: (repo / ".gitattributes").write_text("!*.yml text\n"),
+    "bad config value": lambda repo: git(repo, "config", "diff.renames", "maybe"),
+}
+
+
+@pytest.mark.parametrize("problem", GIT_PROBLEMS)
+@pytest.mark.parametrize("mode", ["staged", "full"])
+def test_a_scan_during_which_git_reports_a_problem_cannot_run(repo, mode, problem):
+    token_line = f"offline_token: {fake_offline_token()}\n"
+    if mode == "staged":
+        stage(repo, "vars.yml", token_line)
+    else:
+        commit(repo, "vars.yml", token_line)
+    GIT_PROBLEMS[problem](repo)
+    assert_cannot_run(scan(repo, *(["--staged"] if mode == "staged" else [])))
+
+
+@pytest.mark.parametrize("mode", ["staged", "full"])
+def test_a_notice_gitleaks_knows_is_harmless_does_not_stop_the_scan(repo, mode):
+    # With more renames than diff.renameLimit, git says rename detection was skipped and shows each
+    # rename as a deletion and an addition, so nothing goes unread. gitleaks logs it as a warning.
+    for i in range(3):
+        commit(repo, f"notes{i}.txt", f"notes number {i}, long enough to be matched as a rename\n")
+    for i in range(3):
+        git(repo, "mv", f"notes{i}.txt", f"moved{i}.txt")
+        (repo / f"moved{i}.txt").write_text(f"notes number {i}, long enough to be matched as a rename\nmore\n")
+    stage(repo, "vars.yml", f"offline_token: {fake_offline_token()}\n")
+    git(repo, "add", "-A")
+    if mode == "full":
+        git(repo, "commit", "-q", "--no-verify", "-m", "move notes")
+    git(repo, "config", "diff.renameLimit", "1")
+    result = scan(repo, *(["--staged"] if mode == "staged" else []))
+    assert "rename detection was skipped" in result.output, result.output  # the notice did happen
+    assert_blocked_by(result, "offline-token")
+
+
 # The full scan reads every commit
 
 def test_a_clean_history_passes_the_full_scan(repo):
