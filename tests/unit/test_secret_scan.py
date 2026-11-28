@@ -11,6 +11,7 @@ exit 2 with "scan cannot run": gitleaks itself would report "no leaks found" and
 """
 
 import json
+import os
 import re
 import subprocess
 from pathlib import Path
@@ -168,6 +169,9 @@ def test_a_staged_scan_with_a_missing_index_file_cannot_run(repo):
 # the scan must say it cannot run, and pass on git's message so the user knows what to fix.
 
 def unreadable_gitattributes(repo):
+    # root can read any file, so this only works as another user; the dev container runs as `dev`.
+    if os.geteuid() == 0:
+        pytest.skip("root ignores file permissions")
     (repo / ".gitattributes").write_text("*.yml text\n")
     (repo / ".gitattributes").chmod(0)
 
@@ -214,6 +218,18 @@ def test_a_full_scan_of_a_history_with_a_missing_object_cannot_run(repo):
     result = scan(repo)
     assert_cannot_run(result)
     assert "unable to read" in result.output, result.output
+
+
+def test_a_scan_that_may_have_found_a_token_before_a_problem_cannot_run(repo):
+    # git log shows the newest commit, with the token, then dies on an older one. gitleaks reads git's
+    # output and its errors side by side, so whether it found the token first is down to timing. Either
+    # way the scan must say it cannot run: "leaks found" would hide that the rest went unread.
+    commit(repo, "notes.txt", "older notes\n")
+    blob = subprocess.run(["git", "rev-parse", "HEAD:notes.txt"], cwd=repo, capture_output=True,
+                          text=True, check=True).stdout.strip()
+    commit(repo, "vars.yml", f"offline_token: {fake_offline_token()}\n")
+    (repo / ".git" / "objects" / blob[:2] / blob[2:]).unlink()
+    assert_cannot_run(scan(repo))
 
 
 @pytest.mark.parametrize("mode", ["staged", "full"])

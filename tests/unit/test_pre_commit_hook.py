@@ -171,12 +171,15 @@ def test_the_hook_blocks_a_commit_when_git_reports_a_problem_during_the_scan(rep
     # gitleaks would say "no leaks found" and exit 0 (issue #42); the hook must block instead.
     repo, env = repo
     setup(repo, env)
-    (repo / ".gitattributes").write_text("*.yml -!x\n")
-    result = commit(repo, env, "vars.yml", f"offline_token: {fake_offline_token()}\n")
+    (repo / "vars.yml").write_text(f"offline_token: {fake_offline_token()}\n")
+    assert run(repo, env, "git", "add", "vars.yml").returncode == 0
+    (repo / ".gitattributes").write_text("*.yml -!x\n")  # after `git add`, so only the scan sees it
+    result = run(repo, env, "git", "commit", "-q", "-m", "add vars.yml")
     assert result.returncode != 0
     assert "commit blocked" in result.output
     assert "scan cannot run" in result.output, result.output
-    assert "is not a valid attribute name" in result.output, result.output  # says what to fix
+    # git's message as the scan passes it on ([git] ...), so the user knows what to fix.
+    assert re.search(r"\[git\].*is not a valid attribute name", result.output), result.output
     assert commits(repo, env) == "0"
 
 
