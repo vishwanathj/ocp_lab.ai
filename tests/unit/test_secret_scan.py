@@ -4,13 +4,14 @@ Each test builds a throwaway git repository and scans it with the project's real
 A "blocked" test also checks which rule fired: a crash or a bad config fails the scan too, and the
 fake token would be caught by gitleaks' built-in rules even if the project's own rule were missing.
 
-The scanner's contract: exit 0 when nothing is found; otherwise exit non-zero and print one finding
-record per secret, with a `RuleID:` line (gitleaks' verbose report) and the secret redacted. If git
-can't read the repository or the index, exit non-zero with "scan cannot run": gitleaks itself would
-report "no leaks found" and exit 0.
+The scanner's contract: exit 0 when nothing is found; exit 1 and print one finding record per secret,
+with a `RuleID:` line (gitleaks' verbose report) and the secret redacted. If the scan can't read the
+changes (git can't read the repository or the index, or reports a problem while gitleaks reads them),
+exit 2 with "scan cannot run": gitleaks itself would report "no leaks found" and exit 0.
 """
 
 import json
+import os
 import re
 import subprocess
 from pathlib import Path
@@ -47,7 +48,7 @@ def scan(repo, *flags, env=None):
 
 
 def assert_blocked_by(result, rule):
-    assert result.returncode != 0, result.output
+    assert result.returncode == 1, result.output
     # A finding record, not just the rule's name: an error message could mention the rule too.
     assert re.search(rf"^RuleID:\s+{rule}$", result.output, re.M), f"no {rule} finding:\n{result.output}"
 
@@ -138,7 +139,8 @@ def test_a_staged_token_is_blocked_in_a_repository_with_earlier_commits(repo):
 # The scan refuses to say "no leaks" when it couldn't read anything
 
 def assert_cannot_run(result):
-    assert result.returncode != 0, result.output
+    # Exactly 2: a scan that found a token and then hit a problem would exit 1 even without the check.
+    assert result.returncode == 2, result.output
     assert "scan cannot run" in result.output, result.output
 
 
@@ -159,6 +161,142 @@ def test_a_staged_scan_with_a_missing_index_file_cannot_run(repo):
     # git treats a missing index as "everything deleted" and shows nothing added, so a scan would pass.
     stage(repo, "vars.yml", f"offline_token: {fake_offline_token()}\n")
     assert_cannot_run(scan(repo, "--staged", env={"GIT_INDEX_FILE": "/nonexistent/index"}))
+
+
+# gitleaks reads the changes from a git command it runs itself. If git writes anything to its error
+# output, apart from a few notices gitleaks knows are harmless, gitleaks stops reading, logs an error,
+# says "no leaks found" and exits 0 (issue #42). Each problem below makes git complain on every command;
+# the scan must say it cannot run, and pass on git's message so the user knows what to fix.
+
+def unreadable_gitattributes(repo):
+    # root can read any file, so this only works as another user; the dev container runs as `dev`.
+    if os.geteuid() == 0:
+        pytest.skip("root ignores file permissions")
+    (repo / ".gitattributes").write_text("*.yml text\n")
+    (repo / ".gitattributes").chmod(0)
+
+
+GIT_PROBLEMS = {
+    "invalid attribute name": (lambda repo: (repo / ".gitattributes").write_text("*.yml -!x\n"),
+                               "is not a valid attribute name"),
+    "negative attribute pattern": (lambda repo: (repo / ".gitattributes").write_text("!*.yml text\n"),
+                                   "Negative patterns are ignored"),
+    "bad info/attributes": (lambda repo: (repo / ".git" / "info" / "attributes").write_text("*.yml -!x\n"),
+                            "is not a valid attribute name"),
+    "unreadable .gitattributes": (unreadable_gitattributes, "unable to access"),
+    "bad config value": (lambda repo: git(repo, "config", "diff.renames", "maybe"), "bad boolean config value"),
+    "broken alternates": (lambda repo: (repo / ".git" / "objects" / "info" / "alternates").write_text("/nonexistent/objects\n"),
+                          "alternate object path"),
+}
+
+
+def scan_in(repo, mode):
+    return scan(repo, *(["--staged"] if mode == "staged" else []))
+
+
+@pytest.mark.parametrize("problem", GIT_PROBLEMS)
+@pytest.mark.parametrize("mode", ["staged", "full"])
+def test_a_scan_during_which_git_reports_a_problem_cannot_run(repo, mode, problem):
+    token_line = f"offline_token: {fake_offline_token()}\n"
+    if mode == "staged":
+        stage(repo, "vars.yml", token_line)
+    else:
+        commit(repo, "vars.yml", token_line)
+    make_problem, message = GIT_PROBLEMS[problem]
+    make_problem(repo)
+    result = scan_in(repo, mode)
+    assert_cannot_run(result)
+    assert message in result.output, result.output
+
+
+def test_a_full_scan_of_a_history_with_a_missing_object_cannot_run(repo):
+    # git stops partway through the history: every commit after the missing object goes unread.
+    commit(repo, "vars.yml", f"offline_token: {fake_offline_token()}\n")
+    blob = subprocess.run(["git", "rev-parse", "HEAD:vars.yml"], cwd=repo, capture_output=True,
+                          text=True, check=True).stdout.strip()
+    (repo / ".git" / "objects" / blob[:2] / blob[2:]).unlink()
+    result = scan(repo)
+    assert_cannot_run(result)
+    assert "unable to read" in result.output, result.output
+
+
+def test_a_scan_that_may_have_found_a_token_before_a_problem_cannot_run(repo):
+    # git log shows the newest commit, with the token, then dies on an older one. gitleaks reads git's
+    # output and its errors side by side, so whether it found the token first is down to timing. Either
+    # way the scan must say it cannot run: "leaks found" would hide that the rest went unread.
+    commit(repo, "notes.txt", "older notes\n")
+    blob = subprocess.run(["git", "rev-parse", "HEAD:notes.txt"], cwd=repo, capture_output=True,
+                          text=True, check=True).stdout.strip()
+    commit(repo, "vars.yml", f"offline_token: {fake_offline_token()}\n")
+    (repo / ".git" / "objects" / blob[:2] / blob[2:]).unlink()
+    assert_cannot_run(scan(repo))
+
+
+# The scan also needs proof that gitleaks finished: its closing "no leaks found" or "leaks found" line.
+# Without it, exit 0 proves nothing. With a full /tmp, for example, gitleaks' log can't be written, so
+# no ERR line can be seen either, and the scan used to pass in silence. Each fake below stands in for
+# gitleaks, first on the PATH.
+FAKE_GITLEAKS = {
+    "ends without a word": "exit 0",
+    "is killed": "kill -9 $$",
+    "fails with a fatal error": 'echo "4:00AM FTL unable to load gitleaks config" >&2; exit 1',
+    # What gitleaks says when it stopped early: "no leaks found" is in it, but isn't the closing line.
+    "reports a partial scan": 'echo "4:00AM WRN no leaks found in partial scan" >&2; exit 0',
+    # The closing line is there, but no exit status gitleaks gives for a finished scan.
+    "exits with an unknown status": 'echo "4:00AM INF no leaks found" >&2; exit 3',
+}
+
+
+@pytest.mark.parametrize("fake", FAKE_GITLEAKS)
+def test_a_scan_with_no_proof_that_gitleaks_finished_cannot_run(repo, tmp_path, fake):
+    stage(repo, "vars.yml", f"offline_token: {fake_offline_token()}\n")
+    bin_dir = tmp_path / "fake-bin"
+    bin_dir.mkdir()
+    (bin_dir / "gitleaks").write_text(f"#!/bin/sh\n{FAKE_GITLEAKS[fake]}\n")
+    (bin_dir / "gitleaks").chmod(0o755)
+    assert_cannot_run(scan(repo, "--staged", env={"PATH": f"{bin_dir}:{GIT_ENV['PATH']}"}))
+
+
+def test_a_scan_without_gitleaks_cannot_run(repo):
+    # gitleaks is in /usr/local/bin in the dev container; git, sh and the rest are in /usr/bin and /bin.
+    stage(repo, "vars.yml", f"offline_token: {fake_offline_token()}\n")
+    assert_cannot_run(scan(repo, "--staged", env={"PATH": "/usr/bin:/bin"}))
+
+
+@pytest.mark.parametrize("mode", ["staged", "full"])
+def test_a_notice_gitleaks_knows_is_harmless_does_not_stop_the_scan(repo, mode):
+    # With more renames than diff.renameLimit, git says rename detection was skipped and shows each
+    # rename as a deletion and an addition, so nothing goes unread. gitleaks logs it as a warning.
+    for i in range(3):
+        commit(repo, f"notes{i}.txt", f"notes number {i}, long enough to be matched as a rename\n")
+    for i in range(3):
+        git(repo, "mv", f"notes{i}.txt", f"moved{i}.txt")
+        (repo / f"moved{i}.txt").write_text(f"notes number {i}, long enough to be matched as a rename\nmore\n")
+    stage(repo, "vars.yml", f"offline_token: {fake_offline_token()}\n")
+    git(repo, "add", "-A")
+    if mode == "full":
+        git(repo, "commit", "-q", "--no-verify", "-m", "move notes")
+    git(repo, "config", "diff.renameLimit", "1")
+    result = scan_in(repo, mode)
+    assert "rename detection was skipped" in result.output, result.output  # the notice did happen
+    assert_blocked_by(result, "offline-token")
+
+
+def test_a_broken_fsmonitor_setting_does_not_stop_the_staged_scan(repo):
+    # core.fsmonitor speeds up reading the work tree, which a staged scan doesn't need. A hook the
+    # container can't run (a host path, say) makes git complain, so the scan must not use it.
+    stage(repo, "vars.yml", f"offline_token: {fake_offline_token()}\n")
+    git(repo, "config", "core.fsmonitor", "/nonexistent/fsmonitor-hook")
+    assert_blocked_by(scan(repo, "--staged"), "offline-token")
+
+
+@pytest.mark.parametrize("url", ["my_alias:owner/repo", "someone@github.com:owner/repo"])
+def test_a_remote_gitleaks_cant_parse_does_not_stop_the_full_scan(repo, url):
+    # gitleaks reads the remote's URL to link findings to the code host, and logs an error when it
+    # can't parse it, as for an ssh alias. That isn't a problem with reading the changes.
+    commit(repo, "vars.yml", f"offline_token: {fake_offline_token()}\n")
+    git(repo, "remote", "add", "origin", url)
+    assert_blocked_by(scan(repo), "offline-token")
 
 
 # The full scan reads every commit
