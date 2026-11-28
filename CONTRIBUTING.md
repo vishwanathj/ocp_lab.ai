@@ -223,8 +223,10 @@ Three checks back this up:
 **"commit blocked"** means one of two things, and the lines above it say which:
 - **A secret was found.** gitleaks prints the file, line and rule, with the secret itself hidden. Remove it
   and commit again. If it's a false positive, end that line with `# gitleaks:allow` and say why in the PR.
-- **The scan couldn't run** (podman isn't working, or git couldn't be read). The hook *fails closed*: it
-  blocks rather than guess. Fix the cause and commit again.
+- **The scan couldn't run** (podman isn't working, git couldn't read the repository, or git reported a
+  problem while the changes were read, such as a mistake in `.gitattributes`; git's message is shown
+  after `[git]`). The hook *fails closed*: it blocks rather than guess. Fix the cause and commit again.
+  CI's `make secrets` fails the same way.
 
 `git commit --no-verify` skips the hook. Use it only when you must (for example, podman is broken and
 the change is urgent); CI scans the commit anyway, but by then it has been pushed. If a secret was
@@ -246,6 +248,9 @@ Known limits:
   Rebase it on `main`.
 - The hook doesn't see inside files git treats as binary (marked in `.gitattributes`, or containing a
   NUL byte); CI does. Neither reads UTF-16 files, which some Windows tools write.
+- If git stops without a message (killed for lack of memory, say), the scan can't tell that it read
+  only part of the changes. And a shallow clone (`git clone --depth`) has no older commits for
+  `make secrets` to scan; CI fetches the whole history.
 - gitleaks' built-in rules skip some paths without saying so: images, PDFs and other binary formats,
   `.gitleaks.toml` itself, and Python virtual environments such as `venv/`. Don't keep
   credentials in such files either.

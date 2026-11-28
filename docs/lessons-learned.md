@@ -20,6 +20,7 @@ The short version. Each links to the entries it came from.
 - A fake must be as limited as what it replaces; run the real thing once. A check that couldn't look must say so — [L12](#l12).
 - Before writing tests, list every form the input takes and every way the tool skips; review the tests before approval — [L13](#l13).
 - A setting a tool accepts isn't a setting it applies; check where it says so (source, logs, a real run) — [L14](#l14).
+- A tool's exit code says what it decided, not whether it saw everything; read its log for errors too — [L15](#l15).
 
 **Process**
 - Never assume a pull request's number; look it up, or refer to it by its issue — [L1](#l1).
@@ -36,6 +37,14 @@ the entry. A lesson that happens twice must become `Guarded`.
 ## Entries
 
 Newest first. Use the template in [CONTRIBUTING.md](../CONTRIBUTING.md#lessons-learned).
+
+### <a id="l15"></a>L15 · 2026-11-28: gitleaks said "no leaks found" whenever git complained
+**Tags:** Verification · Security · AI — **Status:** Guarded ([test_secret_scan.py](../tests/unit/test_secret_scan.py), [test_pre_commit_hook.py](../tests/unit/test_pre_commit_hook.py): every git problem tested must make the scan exit 2, "scan cannot run")
+- **Issue:** Researching [#34](https://github.com/vishwanathj/ocp_lab.ai/issues/34) found that when git writes anything to its error output while gitleaks reads the changes, gitleaks logs an `ERR` line, stops reading, reports "no leaks found" and exits 0. A mistake in `.gitattributes`, a bad config value, an unreadable file, a broken `core.fsmonitor` hook or a missing object was enough: the pre-commit hook, `make secrets` and CI's required check all passed with a fake token in the change ([#42](https://github.com/vishwanathj/ocp_lab.ai/issues/42)). This is [L12](#l12)'s lesson again: a check that couldn't look said "all clear".
+- **Why it stayed hidden:** L12's fix checks that git can read the repository *before* the scan. Nobody asked what happens when git works but complains *during* it. gitleaks does print git's message, but above "no leaks found" and a green check, and the tests looked only at exit codes and findings.
+- **Resolution:** `tools/scan_secrets.sh` keeps gitleaks' log and exits 2, "scan cannot run", on any `ERR` line, so git's message is shown and the commit or CI check fails. `--platform none` and `core.fsmonitor=false` avoid two `ERR`s that don't mean anything went unread. Found while researching #34 and checked by an independent agent; the tests were reviewed twice by an agent and once by CodeRabbit before approval.
+- **Prevention:** the tests above (Guarded), including guards against false failures. Git stopping with no message at all, and shallow clones, are documented limits in [CONTRIBUTING.md](../CONTRIBUTING.md#secrets).
+- **Lesson:** a tool's exit code says what it decided, not whether it saw everything. Read its log for errors too, and test what it does when the source it reads from complains.
 
 ### <a id="l14"></a>L14 · 2026-11-27: Dependabot features apply to only some of our pins
 **Tags:** Verification · Review · AI — **Status:** Guarded ([CONTRIBUTING.md: Roles](../CONTRIBUTING.md#roles): the Reviewer asks for a link to the tool's own docs or source whenever a change says what a tool covers)
