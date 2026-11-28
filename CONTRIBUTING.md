@@ -90,7 +90,7 @@ The rule that matters: **work is checked by a different hat from the one that pr
 | Product owner | Why and what: milestone goals, priorities, acceptance criteria, accepting finished work |
 | Developer | Building the change on a feature branch |
 | Tester | Turning acceptance criteria into tests before the work starts, and verifying the result |
-| Reviewer | Reviewing pull requests independently of the author |
+| Reviewer | Reviewing pull requests independently of the author, and asking for a link to the tool's own docs or source whenever a change says what a tool covers |
 | Security | Secrets handling, token flows, `no_log`, dependency updates |
 | Docs | README, primers, tutorial notes |
 | Release | Versions, tags and release notes |
