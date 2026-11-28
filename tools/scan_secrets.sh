@@ -5,10 +5,11 @@
 #   scan_secrets.sh --staged REPO   what is staged for the next commit
 #   scan_secrets.sh REPO            every commit in the history
 #
-# Exits 0 when nothing is found, and 1 when something is, printing each finding with the secret
-# redacted: CI logs are public. If the scan can't read the changes, it says "scan cannot run" and exits
-# 2: gitleaks itself would log the error, report no leaks and exit 0. That covers git being unable to
-# read the repository or the index, and any error gitleaks logs while reading (issue #42).
+# Exits 0 when gitleaks finished and found nothing, and 1 when it finished and found something,
+# printing each finding with the secret redacted: CI logs are public. In every other case it says "scan
+# cannot run" and exits 2, because gitleaks itself would often report no leaks and exit 0: git can't
+# read the repository or the index; gitleaks logs an error or a fatal error; it exits with any other
+# status; or its log doesn't end with its closing line (issue #42).
 set -eu
 
 cannot_run() {
@@ -45,7 +46,8 @@ history="--log-opts=--all --full-history --diff-merges=first-parent --text"
 # reading and still exits 0 (or 1, if it found something first), so its log decides: any ERR line means
 # part of the changes went unread. Its log goes to stderr, the findings to stdout.
 # --platform none: gitleaks would otherwise read the remote's URL to link findings, and log an ERR for
-# one it can't parse (an ssh alias, say), though the scan itself is complete.
+# one it can't parse (an ssh alias, say), though the scan itself is complete. So findings have no
+# `Link:` line; their commit, file and line are still printed.
 log=$(mktemp) || cannot_run "can't create a temporary file for gitleaks' log"
 trap 'rm -f "$log"' EXIT
 status=0
@@ -55,7 +57,17 @@ gitleaks git $staged ${history:+"$history"} --config "$config" --redact --verbos
 cat "$log" >&2
 # --no-color applies once gitleaks has read its settings; strip colors from anything logged before.
 esc=$(printf '\033')
-if sed "s/$esc\[[0-9;]*m//g" "$log" | grep -q '^[^ ]* ERR '; then
-    cannot_run "gitleaks reported an error while reading the changes (see above), so part of them went unread"
+plain=$(sed "s/$esc\[[0-9;]*m//g" "$log")
+if printf '%s\n' "$plain" | grep -qE '^[^ ]* (ERR|FTL) '; then
+    cannot_run "gitleaks reported an error (see above), so part of the changes may have gone unread"
 fi
+case $status in
+    0|1) ;;
+    *) cannot_run "gitleaks stopped with exit status $status (see above)" ;;
+esac
+# Proof that gitleaks finished: its closing line, always the last in its log. Without it, exit 0 proves
+# nothing; with /tmp full, for example, the log can't be written, so no error could be seen either.
+# "no leaks found in partial scan" is what gitleaks says when it stopped early, so it doesn't count.
+printf '%s\n' "$plain" | tail -n 1 | grep -qE '^[^ ]* (INF no leaks found|WRN leaks found: [0-9]+)$' ||
+    cannot_run "gitleaks didn't report that it finished the scan (see above); is /tmp full?"
 exit "$status"

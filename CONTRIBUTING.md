@@ -225,7 +225,7 @@ Three checks back this up:
   and commit again. If it's a false positive, end that line with `# gitleaks:allow` and say why in the PR.
 - **The scan couldn't run** (podman isn't working, git couldn't read the repository, or git reported a
   problem while the changes were read, such as a mistake in `.gitattributes`; git's message is shown
-  after `[git]`). The hook *fails closed*: it blocks rather than guess. Fix the cause and commit again.
+  after `[git]`. Or gitleaks itself failed, or didn't report that it finished). The hook *fails closed*: it blocks rather than guess. Fix the cause and commit again.
   CI's `make secrets` fails the same way.
 
 `git commit --no-verify` skips the hook. Use it only when you must (for example, podman is broken and
