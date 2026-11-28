@@ -176,6 +176,7 @@ def test_the_hook_blocks_a_commit_when_git_reports_a_problem_during_the_scan(rep
     assert result.returncode != 0
     assert "commit blocked" in result.output
     assert "scan cannot run" in result.output, result.output
+    assert "is not a valid attribute name" in result.output, result.output  # says what to fix
     assert commits(repo, env) == "0"
 
 
