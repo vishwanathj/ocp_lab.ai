@@ -1,11 +1,11 @@
 # Tools installed in the dev container. Pin exact versions, including dependencies,
 # so every build installs the same packages.
-pytest==9.1.1
+pytest==9.2.0
 # Reads .github/dependabot.yml in its tests (issue #10)
-pyyaml==6.0.3
+pyyaml==6.0.4
 
 # Dependencies of pytest
 iniconfig==2.3.1
 packaging==26.3
-pluggy==1.6.0
+pluggy==1.7.0
 pygments==2.21.0
