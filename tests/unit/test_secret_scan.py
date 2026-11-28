@@ -232,6 +232,33 @@ def test_a_scan_that_may_have_found_a_token_before_a_problem_cannot_run(repo):
     assert_cannot_run(scan(repo))
 
 
+# The scan also needs proof that gitleaks finished: its closing "no leaks found" or "leaks found" line.
+# Without it, exit 0 proves nothing. With a full /tmp, for example, gitleaks' log can't be written, so
+# no ERR line can be seen either, and the scan used to pass in silence. Each fake below stands in for
+# gitleaks, first on the PATH.
+FAKE_GITLEAKS = {
+    "ends without a word": "exit 0",
+    "is killed": "kill -9 $$",
+    "fails with a fatal error": 'echo "4:00AM FTL unable to load gitleaks config" >&2; exit 1',
+}
+
+
+@pytest.mark.parametrize("fake", FAKE_GITLEAKS)
+def test_a_scan_with_no_proof_that_gitleaks_finished_cannot_run(repo, tmp_path, fake):
+    stage(repo, "vars.yml", f"offline_token: {fake_offline_token()}\n")
+    bin_dir = tmp_path / "fake-bin"
+    bin_dir.mkdir()
+    (bin_dir / "gitleaks").write_text(f"#!/bin/sh\n{FAKE_GITLEAKS[fake]}\n")
+    (bin_dir / "gitleaks").chmod(0o755)
+    assert_cannot_run(scan(repo, "--staged", env={"PATH": f"{bin_dir}:{GIT_ENV['PATH']}"}))
+
+
+def test_a_scan_without_gitleaks_cannot_run(repo):
+    # gitleaks is in /usr/local/bin in the dev container; git, sh and the rest are in /usr/bin and /bin.
+    stage(repo, "vars.yml", f"offline_token: {fake_offline_token()}\n")
+    assert_cannot_run(scan(repo, "--staged", env={"PATH": "/usr/bin:/bin"}))
+
+
 @pytest.mark.parametrize("mode", ["staged", "full"])
 def test_a_notice_gitleaks_knows_is_harmless_does_not_stop_the_scan(repo, mode):
     # With more renames than diff.renameLimit, git says rename detection was skipped and shows each
