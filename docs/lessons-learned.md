@@ -19,6 +19,7 @@ The short version. Each links to the entries it came from.
 - A test that expects a failure must check why it failed; with built-in rules, check your own rule fired — [L11](#l11).
 - A fake must be as limited as what it replaces; run the real thing once. A check that couldn't look must say so — [L12](#l12).
 - Before writing tests, list every form the input takes and every way the tool skips; review the tests before approval — [L13](#l13).
+- A setting a tool accepts isn't a setting it applies; check where it says so (source, logs, a real run) — [L14](#l14).
 
 **Process**
 - Never assume a pull request's number; look it up, or refer to it by its issue — [L1](#l1).
@@ -35,6 +36,14 @@ the entry. A lesson that happens twice must become `Guarded`.
 ## Entries
 
 Newest first. Use the template in [CONTRIBUTING.md](../CONTRIBUTING.md#lessons-learned).
+
+### <a id="l14"></a>L14 · 2026-11-27: Dependabot accepts a cooldown for every image but applies it to some
+**Tags:** Verification · Review · AI — **Status:** Recorded (accepted risk: documented in [CONTRIBUTING.md](../CONTRIBUTING.md#dependabot-pull-requests); gitleaks PRs are still reviewed before merging)
+- **Issue:** In [#10](https://github.com/vishwanathj/ocp_lab.ai/issues/10), `.github/dependabot.yml` sets a 7-day cooldown for the container images, and a test checks it's there. Dependabot accepts it, but applies it only to Docker Hub images; for gitleaks on `ghcr.io` it logs "skipping cooldown" and proposes new releases at once.
+- **Why it stayed hidden:** the setting is valid, the documentation lists cooldown for the docker ecosystem, and the test of the config passes. Nothing that a test or a reader of the config sees says it's ignored.
+- **Resolution:** an independent reviewer found it in Dependabot's source before the test review ([`update_checker.rb`](https://github.com/dependabot/dependabot-core/blob/main/docker/lib/dependabot/docker/update_checker.rb)). The product owner accepted it; the acceptance criterion and CONTRIBUTING say so.
+- **Prevention:** accepted risk; CONTRIBUTING's [Writing the tests first](../CONTRIBUTING.md#writing-the-tests-first) already asks to read how a tool decides to skip, which is how this was found.
+- **Lesson:** a test of a config proves the setting is written, not that the tool honours it. For a setting that matters, find where the tool applies it: its source, its logs, or a real run.
 
 ### <a id="l13"></a>L13 · 2026-11-27: Reviewers kept finding inputs the tests had never tried
 **Tags:** Verification · Review · AI — **Status:** Guarded ([CONTRIBUTING.md: Writing the tests first](../CONTRIBUTING.md#writing-the-tests-first))

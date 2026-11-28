@@ -1,0 +1,50 @@
+# Keeps the pinned tools up to date (issue #10): one grouped pull request per ecosystem, each week.
+# Every pin stays exact; Dependabot proposes the new pin and CI tests it before anyone merges.
+# Security updates don't wait for the schedule or the cooldown, but only pip gets them: Dependabot has
+# none for images, nor for Actions pinned by SHA. How these PRs are reviewed and merged:
+# CONTRIBUTING.md, "Dependabot pull requests".
+version: 2
+updates:
+  # The actions in .github/workflows, pinned by commit SHA with the version in a comment.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    # Wait 7 days before proposing a brand-new release: a broken or malicious one is usually
+    # pulled by then.
+    cooldown:
+      default-days: 7
+    groups:
+      github-actions:
+        patterns: ["*"]
+    labels: [type/security, area/ci]
+
+  # The images in Containerfile, pinned by tag and digest: the python base image and gitleaks.
+  # Dependabot applies the cooldown to Docker Hub images only, so gitleaks (ghcr.io) has none.
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    groups:
+      container-images:
+        patterns: ["*"]
+    labels: [type/security, area/ci]
+    ignore:
+      # Stay on Python 3.12: rebuilds of 3.12-slim (new digests) come through, a new Python
+      # version (3.13-slim) is a decision of its own.
+      - dependency-name: library/python
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+
+  # The exact versions in requirements-dev.txt.
+  - package-ecosystem: pip
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    groups:
+      python-packages:
+        patterns: ["*"]
+    labels: [type/security, area/ci]
