@@ -240,6 +240,10 @@ FAKE_GITLEAKS = {
     "ends without a word": "exit 0",
     "is killed": "kill -9 $$",
     "fails with a fatal error": 'echo "4:00AM FTL unable to load gitleaks config" >&2; exit 1',
+    # What gitleaks says when it stopped early: "no leaks found" is in it, but isn't the closing line.
+    "reports a partial scan": 'echo "4:00AM WRN no leaks found in partial scan" >&2; exit 0',
+    # The closing line is there, but no exit status gitleaks gives for a finished scan.
+    "exits with an unknown status": 'echo "4:00AM INF no leaks found" >&2; exit 3',
 }
 
 
